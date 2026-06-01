@@ -1,0 +1,10 @@
+# Dart / Pub
+.dart_tool/
+.packages
+build/
+pubspec.lock
+
+# gg
+.gg/
+.gg.json
+coverage/
