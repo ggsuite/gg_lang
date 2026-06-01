@@ -240,5 +240,6 @@ class LanguageCatalog {
     final source = await file.readAsString();
     return LanguageCatalog.fromString(source);
   }
+
   // coverage:ignore-end
 }

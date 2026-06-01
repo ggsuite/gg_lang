@@ -9,3 +9,4 @@ library;
 
 export 'src/language_catalog.dart';
 export 'src/project_type.dart';
+export 'src/type_script_package_manager.dart';

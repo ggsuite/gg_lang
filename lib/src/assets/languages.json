@@ -35,7 +35,7 @@
         "publish": {
           "label": "dart pub publish",
           "exec": "dart",
-          "args": ["pub", "publish", "--force"]
+          "args": ["pub", "publish"]
         }
       }
     },
@@ -73,7 +73,7 @@
         "publish": {
           "label": "flutter pub publish",
           "exec": "flutter",
-          "args": ["pub", "publish", "--force"]
+          "args": ["pub", "publish"]
         }
       }
     },
