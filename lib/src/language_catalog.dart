@@ -137,6 +137,47 @@ class PackageManagerSpec {
 
 // #############################################################################
 
+/// Describes how to query the version a package has published to its registry.
+///
+/// Two kinds are supported:
+/// - `http` — a JSON endpoint queried over HTTP (e.g. pub.dev). [url] is a
+///   `{name}` placeholder template, [latestPath] is the dotted path to the
+///   version string in the response body.
+/// - `cli`  — a [LanguageCommand] (referenced by [command]) whose stdout is the
+///   published version (e.g. `npm view {name} version`).
+class RegistrySpec {
+  /// Constructor.
+  const RegistrySpec({
+    required this.kind,
+    this.url,
+    this.latestPath,
+    this.command,
+  });
+
+  /// Builds a [RegistrySpec] from its JSON representation.
+  factory RegistrySpec.fromMap(Map<String, dynamic> map) => RegistrySpec(
+    kind: map['kind'] as String,
+    url: map['url'] as String?,
+    latestPath: map['latestPath'] as String?,
+    command: map['command'] as String?,
+  );
+
+  /// Either `http` or `cli`.
+  final String kind;
+
+  /// For `http`: the request URL with a `{name}` placeholder.
+  final String? url;
+
+  /// For `http`: the dotted path to the version string in the JSON response
+  /// (e.g. `latest.version`).
+  final String? latestPath;
+
+  /// For `cli`: the command key in [LanguageSpec.commands] to run.
+  final String? command;
+}
+
+// #############################################################################
+
 /// All language-specific configuration for a single language.
 class LanguageSpec {
   /// Constructor.
@@ -145,6 +186,7 @@ class LanguageSpec {
     required this.manifest,
     required this.commands,
     this.packageManager,
+    this.registry,
   });
 
   /// Builds a [LanguageSpec] from its JSON representation.
@@ -155,11 +197,13 @@ class LanguageSpec {
     });
 
     final pmRaw = map['packageManager'] as Map<String, dynamic>?;
+    final registryRaw = map['registry'] as Map<String, dynamic>?;
 
     return LanguageSpec(
       displayName: map['displayName'] as String,
       manifest: ManifestSpec.fromMap(map['manifest'] as Map<String, dynamic>),
       packageManager: pmRaw == null ? null : PackageManagerSpec.fromMap(pmRaw),
+      registry: registryRaw == null ? null : RegistrySpec.fromMap(registryRaw),
       commands: commands,
     );
   }
@@ -172,6 +216,10 @@ class LanguageSpec {
 
   /// The package manager wrapping behaviour, or null when not applicable.
   final PackageManagerSpec? packageManager;
+
+  /// How to query the published version from the registry, or null when the
+  /// language has no registry configured.
+  final RegistrySpec? registry;
 
   /// All commands defined for this language, keyed by capability
   /// (`install`, `analyze`, `formatFix`, `test`, `publish`, ...).

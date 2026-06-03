@@ -2,9 +2,22 @@
 
 ## [Unreleased]
 
+### Added
+
+- `Manifest` — format-driven accessor that reads and writes package name,
+version and publish-target marker for both `pubspec.yaml` (yaml, via
+`yaml_edit` so formatting/comments survive) and `package.json` (json), driven
+by `ManifestSpec`. Includes `isPrivate()` and a `Manifest.detect` factory.
+- `Registry` abstraction with `PubDevRegistry` (pub.dev HTTP API) and
+`NpmRegistry` (`npm view <name> version`), plus a `RegistryFactory` that picks
+the implementation from the new `RegistrySpec` in the catalog.
+- `RegistrySpec` and `LanguageSpec.registry`; `languages.json` now describes
+the registry for dart/flutter (http) and typescript (cli).
+
 ### Changed
 
 - chore: prepare gg\_lang 0.0.1 for publishing (remove publish\_to:none, changelog)
+- feat(do add): auto-clone transitive deps into master before graph build &amp; P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
 
 ## [0.0.1] - 2026-06-01
 

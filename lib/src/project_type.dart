@@ -20,6 +20,17 @@ enum ProjectType {
   typescript,
 }
 
+/// Convenience predicates on [ProjectType].
+extension ProjectTypeX on ProjectType {
+  /// Whether this is a Dart-family project (Dart or Flutter).
+  ///
+  /// These project types share the pubspec.yaml manifest, the pub.dev
+  /// registry and the CHANGELOG.md/cider based versioning flow — many gg
+  /// commands branch on exactly this distinction.
+  bool get isDartFamily =>
+      this == ProjectType.dart || this == ProjectType.flutter;
+}
+
 // #############################################################################
 
 /// Detects the [ProjectType] of [directory].
