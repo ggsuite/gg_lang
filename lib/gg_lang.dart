@@ -8,5 +8,8 @@
 library;
 
 export 'src/language_catalog.dart';
+export 'src/manifest.dart';
 export 'src/project_type.dart';
+export 'src/registry.dart';
+export 'src/registry_waiter.dart';
 export 'src/type_script_package_manager.dart';

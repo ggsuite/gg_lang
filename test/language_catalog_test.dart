@@ -23,6 +23,11 @@ const _json = '''
         "publishTargetMarker": "publish_to",
         "lockFile": "pubspec.lock"
       },
+      "registry": {
+        "kind": "http",
+        "url": "https://pub.dev/api/packages/{name}",
+        "latestPath": "latest.version"
+      },
       "commands": {
         "analyze": {
           "label": "dart analyze",
@@ -41,6 +46,7 @@ const _json = '''
         "publishTargetMarker": "private",
         "lockFile": "package-lock.json"
       },
+      "registry": { "kind": "cli", "command": "registryVersion" },
       "packageManager": { "wrap": true },
       "commands": {
         "analyze": {
@@ -106,6 +112,23 @@ void main() {
 
     test('has a null package manager when absent', () {
       expect(catalog.specByKey('dart').packageManager, isNull);
+    });
+
+    group('registry', () {
+      test('parses an http registry', () {
+        final registry = catalog.specByKey('dart').registry;
+        expect(registry?.kind, 'http');
+        expect(registry?.url, 'https://pub.dev/api/packages/{name}');
+        expect(registry?.latestPath, 'latest.version');
+        expect(registry?.command, isNull);
+      });
+
+      test('parses a cli registry', () {
+        final registry = catalog.specByKey('typescript').registry;
+        expect(registry?.kind, 'cli');
+        expect(registry?.command, 'registryVersion');
+        expect(registry?.url, isNull);
+      });
     });
 
     group('command', () {
@@ -182,6 +205,18 @@ void main() {
       expect(
         bundled.spec(ProjectType.typescript).command('publish').exec,
         'npm',
+      );
+    });
+
+    test('every language exposes a registry block', () {
+      final source = File('lib/src/assets/languages.json').readAsStringSync();
+      final bundled = LanguageCatalog.fromString(source);
+      expect(bundled.spec(ProjectType.dart).registry?.kind, 'http');
+      expect(bundled.spec(ProjectType.flutter).registry?.kind, 'http');
+      expect(bundled.spec(ProjectType.typescript).registry?.kind, 'cli');
+      expect(
+        bundled.spec(ProjectType.typescript).registry?.command,
+        'registryVersion',
       );
     });
   });

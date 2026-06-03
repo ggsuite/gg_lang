@@ -93,4 +93,12 @@ void main() {
       expect(detectProjectType(tmp), ProjectType.dart);
     });
   });
+
+  group('ProjectType.isDartFamily', () {
+    test('is true for Dart and Flutter, false for TypeScript', () {
+      expect(ProjectType.dart.isDartFamily, isTrue);
+      expect(ProjectType.flutter.isDartFamily, isTrue);
+      expect(ProjectType.typescript.isDartFamily, isFalse);
+    });
+  });
 }
