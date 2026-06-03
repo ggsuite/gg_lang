@@ -8,3 +8,5 @@ pubspec.lock
 .gg/
 .gg.json
 coverage/
+.gg
+!.gg/.gg.json
