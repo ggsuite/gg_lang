@@ -75,4 +75,28 @@ void main() {
       expect(cmd.args, ['vitest', 'run', '--coverage']);
     });
   });
+
+  group('TypeScriptPackageManager.lockFile', () {
+    test('maps each package manager to its lock file', () {
+      expect(TypeScriptPackageManager.pnpm.lockFile, 'pnpm-lock.yaml');
+      expect(TypeScriptPackageManager.yarn.lockFile, 'yarn.lock');
+      expect(TypeScriptPackageManager.npm.lockFile, 'package-lock.json');
+    });
+  });
+
+  group('lockFileFor', () {
+    test('returns pubspec.lock for Dart/Flutter projects', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: x\n');
+      expect(lockFileFor(tmp), 'pubspec.lock');
+    });
+
+    test('returns the package-manager lock file for TypeScript projects', () {
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"x"}');
+      File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
+      expect(lockFileFor(tmp), 'package-lock.json');
+
+      File('${tmp.path}/pnpm-lock.yaml').writeAsStringSync('');
+      expect(lockFileFor(tmp), 'pnpm-lock.yaml');
+    });
+  });
 }

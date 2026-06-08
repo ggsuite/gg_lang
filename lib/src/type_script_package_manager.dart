@@ -6,6 +6,8 @@
 
 import 'dart:io';
 
+import 'package:gg_lang/src/project_type.dart';
+
 // #############################################################################
 
 /// The JavaScript/TypeScript package manager in use by a project.
@@ -23,6 +25,17 @@ enum TypeScriptPackageManager {
 
   /// The command-line executable that drives this package manager.
   final String executable;
+
+  /// The lock file this package manager writes.
+  ///
+  /// - pnpm → `pnpm-lock.yaml`
+  /// - yarn → `yarn.lock`
+  /// - npm  → `package-lock.json`
+  String get lockFile => switch (this) {
+    TypeScriptPackageManager.pnpm => 'pnpm-lock.yaml',
+    TypeScriptPackageManager.yarn => 'yarn.lock',
+    TypeScriptPackageManager.npm => 'package-lock.json',
+  };
 
   /// Builds the argv to invoke a locally-installed tool (e.g. `eslint`,
   /// `tsc`) with the given [args].
@@ -63,4 +76,18 @@ TypeScriptPackageManager detectTypeScriptPackageManager(Directory directory) {
     return TypeScriptPackageManager.yarn;
   }
   return TypeScriptPackageManager.npm;
+}
+
+// #############################################################################
+
+/// Returns the dependency lock file name for the project in [directory].
+///
+/// `pubspec.lock` for Dart/Flutter, and the package-manager-specific lock
+/// file for TypeScript (`package-lock.json` for npm, `yarn.lock` for yarn,
+/// `pnpm-lock.yaml` for pnpm — detected from the lock files present).
+String lockFileFor(Directory directory) {
+  final type = detectProjectType(directory);
+  return type.isDartFamily
+      ? 'pubspec.lock'
+      : detectTypeScriptPackageManager(directory).lockFile;
 }

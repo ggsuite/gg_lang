@@ -1,0 +1,237 @@
+// @license
+// Copyright (c) 2025 Göran Hegenberg. All Rights Reserved.
+//
+// Use of this source code is governed by terms that can be
+// found in the LICENSE file in the root of this package.
+
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:gg_lang/gg_lang.dart';
+import 'package:gg_process/gg_process.dart';
+import 'package:http/testing.dart';
+import 'package:http/http.dart' as http;
+import 'package:mocktail/mocktail.dart';
+import 'package:test/test.dart';
+
+const _httpSpec = RegistrySpec(
+  kind: 'http',
+  url: 'https://pub.dev/api/packages/{name}',
+  latestPath: 'latest.version',
+);
+
+const _tsLang = LanguageSpec(
+  displayName: 'TypeScript',
+  manifest: ManifestSpec(
+    file: 'package.json',
+    format: 'json',
+    versionPath: 'version',
+    namePath: 'name',
+    publishTargetMarker: 'private',
+    lockFile: 'package-lock.json',
+  ),
+  registry: RegistrySpec(kind: 'cli', command: 'registryVersion'),
+  commands: {
+    'registryVersion': LanguageCommand(
+      label: 'npm view {name} version',
+      exec: 'npm',
+      args: ['view', '{name}', 'version'],
+    ),
+  },
+);
+
+void main() {
+  setUpAll(() {
+    registerFallbackValue(<String>[]);
+  });
+
+  group('PubDevRegistry', () {
+    test('returns the latest published version', () async {
+      final client = MockClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'latest': {'version': '1.2.3'},
+          }),
+          200,
+        ),
+      );
+      final registry = PubDevRegistry(spec: _httpSpec, httpClient: client);
+      final version = await registry.latestVersion(packageName: 'foo');
+      expect(version.toString(), '1.2.3');
+    });
+
+    test('returns null on 404 (never published)', () async {
+      final client = MockClient((_) async => http.Response('', 404));
+      final registry = PubDevRegistry(spec: _httpSpec, httpClient: client);
+      expect(await registry.latestVersion(packageName: 'foo'), isNull);
+    });
+
+    test('throws on a non-200/404 status', () async {
+      final client = MockClient((_) async => http.Response('boom', 500));
+      final registry = PubDevRegistry(spec: _httpSpec, httpClient: client);
+      expect(
+        registry.latestVersion(packageName: 'foo'),
+        throwsA(isA<RegistryException>()),
+      );
+    });
+
+    test('throws when the latest path is missing', () async {
+      final client = MockClient(
+        (_) async => http.Response(jsonEncode({'other': 1}), 200),
+      );
+      final registry = PubDevRegistry(spec: _httpSpec, httpClient: client);
+      expect(
+        registry.latestVersion(packageName: 'foo'),
+        throwsA(isA<RegistryException>()),
+      );
+    });
+
+    test('wraps transport errors', () async {
+      final client = MockClient((_) async => throw const SocketException('x'));
+      final registry = PubDevRegistry(spec: _httpSpec, httpClient: client);
+      expect(
+        registry.latestVersion(packageName: 'foo'),
+        throwsA(isA<RegistryException>()),
+      );
+    });
+  });
+
+  group('NpmRegistry', () {
+    late MockGgProcessWrapper wrapper;
+
+    setUp(() {
+      wrapper = MockGgProcessWrapper();
+    });
+
+    void stub(ProcessResult result) {
+      when(
+        () => wrapper.run(any(), any(), runInShell: any(named: 'runInShell')),
+      ).thenAnswer((_) async => result);
+    }
+
+    test('returns the version printed by npm view', () async {
+      stub(ProcessResult(0, 0, '4.5.6\n', ''));
+      final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+      final version = await registry.latestVersion(packageName: 'ts_pkg');
+      expect(version.toString(), '4.5.6');
+    });
+
+    test('returns null on an npm E404', () async {
+      stub(ProcessResult(0, 1, '', 'npm ERR! code E404'));
+      final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+      expect(await registry.latestVersion(packageName: 'ts_pkg'), isNull);
+    });
+
+    test('returns null when stdout is empty', () async {
+      stub(ProcessResult(0, 0, '\n', ''));
+      final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+      expect(await registry.latestVersion(packageName: 'ts_pkg'), isNull);
+    });
+
+    test('throws on a non-404 npm error', () async {
+      stub(ProcessResult(0, 1, '', 'npm ERR! network failure'));
+      final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+      expect(
+        registry.latestVersion(packageName: 'ts_pkg'),
+        throwsA(isA<RegistryException>()),
+      );
+    });
+  });
+
+  group('RegistryFactory', () {
+    test('returns a PubDevRegistry for http registries', () {
+      final spec = LanguageCatalog.fromString(
+        _catalogJson,
+      ).spec(ProjectType.dart);
+      final registry = const RegistryFactory().forProjectType(
+        ProjectType.dart,
+        spec: spec,
+      );
+      expect(registry, isA<PubDevRegistry>());
+    });
+
+    test('returns an NpmRegistry for cli registries', () {
+      final registry = const RegistryFactory().forProjectType(
+        ProjectType.typescript,
+        spec: _tsLang,
+      );
+      expect(registry, isA<NpmRegistry>());
+    });
+
+    test('throws when no registry is configured', () {
+      const spec = LanguageSpec(
+        displayName: 'NoReg',
+        manifest: ManifestSpec(
+          file: 'pubspec.yaml',
+          format: 'yaml',
+          versionPath: 'version',
+          namePath: 'name',
+          publishTargetMarker: 'publish_to',
+          lockFile: 'pubspec.lock',
+        ),
+        commands: {},
+      );
+      expect(
+        () => const RegistryFactory().forProjectType(
+          ProjectType.dart,
+          spec: spec,
+        ),
+        throwsA(isA<RegistryException>()),
+      );
+    });
+
+    test('throws on an unknown registry kind', () {
+      const spec = LanguageSpec(
+        displayName: 'Weird',
+        manifest: ManifestSpec(
+          file: 'pubspec.yaml',
+          format: 'yaml',
+          versionPath: 'version',
+          namePath: 'name',
+          publishTargetMarker: 'publish_to',
+          lockFile: 'pubspec.lock',
+        ),
+        registry: RegistrySpec(kind: 'carrier-pigeon'),
+        commands: {},
+      );
+      expect(
+        () => const RegistryFactory().forProjectType(
+          ProjectType.dart,
+          spec: spec,
+        ),
+        throwsA(isA<RegistryException>()),
+      );
+    });
+  });
+
+  group('RegistryException', () {
+    test('has a readable toString', () {
+      expect(RegistryException('boom').toString(), contains('boom'));
+    });
+  });
+}
+
+const _catalogJson = '''
+{
+  "schemaVersion": 1,
+  "languages": {
+    "dart": {
+      "displayName": "Dart",
+      "manifest": {
+        "file": "pubspec.yaml",
+        "format": "yaml",
+        "versionPath": "version",
+        "namePath": "name",
+        "publishTargetMarker": "publish_to",
+        "lockFile": "pubspec.lock"
+      },
+      "registry": {
+        "kind": "http",
+        "url": "https://pub.dev/api/packages/{name}",
+        "latestPath": "latest.version"
+      },
+      "commands": {}
+    }
+  }
+}
+''';

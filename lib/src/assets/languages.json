@@ -11,6 +11,11 @@
         "publishTargetMarker": "publish_to",
         "lockFile": "pubspec.lock"
       },
+      "registry": {
+        "kind": "http",
+        "url": "https://pub.dev/api/packages/{name}",
+        "latestPath": "latest.version"
+      },
       "commands": {
         "install": {
           "label": "dart pub get --offline",
@@ -49,6 +54,11 @@
         "publishTargetMarker": "publish_to",
         "lockFile": "pubspec.lock"
       },
+      "registry": {
+        "kind": "http",
+        "url": "https://pub.dev/api/packages/{name}",
+        "latestPath": "latest.version"
+      },
       "commands": {
         "install": {
           "label": "flutter pub get --offline",
@@ -86,6 +96,10 @@
         "namePath": "name",
         "publishTargetMarker": "private",
         "lockFile": "package-lock.json"
+      },
+      "registry": {
+        "kind": "cli",
+        "command": "registryVersion"
       },
       "packageManager": {
         "wrap": true
