@@ -17,7 +17,8 @@ the registry for dart/flutter (http) and typescript (cli).
 ### Changed
 
 - chore: prepare gg\_lang 0.0.1 for publishing (remove publish\_to:none, changelog)
-- feat(do add): auto-clone transitive deps into master before graph build &amp; P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
+- feat(do add): auto-clone transitive deps into master before graph build & P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
+- feat(gg\_lang): add example/ for pana compliance
 
 ## [0.0.1] - 2026-06-01
 
