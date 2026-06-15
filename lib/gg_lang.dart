@@ -9,6 +9,7 @@ library;
 
 export 'src/language_catalog.dart';
 export 'src/manifest.dart';
+export 'src/npm_scripts.dart';
 export 'src/project_type.dart';
 export 'src/registry.dart';
 export 'src/registry_waiter.dart';

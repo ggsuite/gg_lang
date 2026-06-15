@@ -64,6 +64,25 @@ ProjectType detectProjectType(Directory directory) {
   );
 }
 
+// #############################################################################
+
+/// Whether [directory] is a cross-language *bridge* project — a repo that
+/// ships both a Dart manifest (`pubspec.yaml`) and a TypeScript manifest
+/// (`package.json` + `tsconfig.json`) side by side.
+///
+/// [detectProjectType] resolves such a directory to [ProjectType.dart],
+/// because pubspec.yaml takes precedence. The gg check pipeline
+/// (analyze/format/tests) treats bridges as TypeScript instead, so it needs
+/// to recognize them explicitly.
+bool isBridgeProject(Directory directory) {
+  final pubspec = File('${directory.path}/pubspec.yaml');
+  final packageJson = File('${directory.path}/package.json');
+  final tsconfig = File('${directory.path}/tsconfig.json');
+  return pubspec.existsSync() &&
+      packageJson.existsSync() &&
+      tsconfig.existsSync();
+}
+
 // .............................................................................
 bool _hasTopLevelFlutterKey(String pubspecContent) {
   for (final rawLine in pubspecContent.split('\n')) {

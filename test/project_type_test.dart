@@ -94,6 +94,34 @@ void main() {
     });
   });
 
+  group('isBridgeProject', () {
+    test('is true when pubspec.yaml, package.json and tsconfig coexist', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
+      expect(isBridgeProject(tmp), isTrue);
+      // detectProjectType still reports dart (pubspec precedence).
+      expect(detectProjectType(tmp), ProjectType.dart);
+    });
+
+    test('is false for a pure Dart package', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      expect(isBridgeProject(tmp), isFalse);
+    });
+
+    test('is false for a pure TypeScript project', () {
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
+      expect(isBridgeProject(tmp), isFalse);
+    });
+
+    test('is false when tsconfig.json is missing', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      expect(isBridgeProject(tmp), isFalse);
+    });
+  });
+
   group('ProjectType.isDartFamily', () {
     test('is true for Dart and Flutter, false for TypeScript', () {
       expect(ProjectType.dart.isDartFamily, isTrue);

@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Treat dart-typescript bridge repos as TypeScript for can/do commit, running package.json scripts (test/lint/format:check)
+- Treat dart-typescript bridge repos as TypeScript for can/do review (npm install, skip dart pub get); export isBridgeProject from gg\_one
+
 ## [0.1.0] - 2026-06-08
 
 ### Added
@@ -32,5 +39,6 @@ metadata for Dart, Flutter and TypeScript. Extracted from `gg_one` so it can
 be shared by `gg_one`, `gg_test` and `gg_publish` without circular
 dependencies.
 
+[Unreleased]: https://github.com/ggsuite/gg_lang/compare/0.1.0...HEAD
 [0.1.0]: https://github.com/ggsuite/gg_lang/compare/0.0.1...0.1.0
 [0.0.1]: https://github.com/ggsuite/gg_lang/releases/tag/0.0.1

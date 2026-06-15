@@ -62,6 +62,17 @@ enum TypeScriptPackageManager {
       ),
     };
   }
+
+  /// Builds the argv to run a `package.json` script (e.g. `test`, `lint`,
+  /// `format:check`) named [script].
+  ///
+  /// All package managers share the `<pm> run <script>` form:
+  /// - pnpm → `pnpm run <script>`
+  /// - yarn → `yarn run <script>`
+  /// - npm  → `npm run <script>`
+  ({String executable, List<String> args}) runCommand(String script) {
+    return (executable: executable, args: ['run', script]);
+  }
 }
 
 // #############################################################################

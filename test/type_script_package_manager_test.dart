@@ -76,6 +76,26 @@ void main() {
     });
   });
 
+  group('TypeScriptPackageManager.runCommand', () {
+    test('pnpm uses "pnpm run <script>"', () {
+      final cmd = TypeScriptPackageManager.pnpm.runCommand('test');
+      expect(cmd.executable, 'pnpm');
+      expect(cmd.args, ['run', 'test']);
+    });
+
+    test('yarn uses "yarn run <script>"', () {
+      final cmd = TypeScriptPackageManager.yarn.runCommand('lint');
+      expect(cmd.executable, 'yarn');
+      expect(cmd.args, ['run', 'lint']);
+    });
+
+    test('npm uses "npm run <script>"', () {
+      final cmd = TypeScriptPackageManager.npm.runCommand('format:check');
+      expect(cmd.executable, 'npm');
+      expect(cmd.args, ['run', 'format:check']);
+    });
+  });
+
   group('TypeScriptPackageManager.lockFile', () {
     test('maps each package manager to its lock file', () {
       expect(TypeScriptPackageManager.pnpm.lockFile, 'pnpm-lock.yaml');
