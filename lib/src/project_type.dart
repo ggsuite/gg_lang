@@ -83,6 +83,24 @@ bool isBridgeProject(Directory directory) {
       tsconfig.existsSync();
 }
 
+// #############################################################################
+
+/// The [ProjectType] that gg's check pipeline (analyze / format / tests)
+/// should use for [directory].
+///
+/// This is the single source of truth for the rule "cross-language bridge
+/// repos are checked as TypeScript": a bridge (see [isBridgeProject]) resolves
+/// to [ProjectType.typescript], everything else is delegated to
+/// [detectProjectType]. Prefer this over hand-writing
+/// `isBridgeProject(d) ? ProjectType.typescript : detectProjectType(d)` so the
+/// rule lives in one place.
+///
+/// Like [detectProjectType], throws an [Exception] when [directory] matches no
+/// known project type.
+ProjectType checkProjectType(Directory directory) => isBridgeProject(directory)
+    ? ProjectType.typescript
+    : detectProjectType(directory);
+
 // .............................................................................
 bool _hasTopLevelFlutterKey(String pubspecContent) {
   for (final rawLine in pubspecContent.split('\n')) {
