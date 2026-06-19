@@ -96,6 +96,26 @@ void main() {
     });
   });
 
+  group('TypeScriptPackageManager.publishCommand', () {
+    test('pnpm publishes with --no-git-checks', () {
+      final cmd = TypeScriptPackageManager.pnpm.publishCommand;
+      expect(cmd.executable, 'pnpm');
+      expect(cmd.args, ['publish', '--no-git-checks']);
+    });
+
+    test('yarn uses "yarn publish"', () {
+      final cmd = TypeScriptPackageManager.yarn.publishCommand;
+      expect(cmd.executable, 'yarn');
+      expect(cmd.args, ['publish']);
+    });
+
+    test('npm uses "npm publish"', () {
+      final cmd = TypeScriptPackageManager.npm.publishCommand;
+      expect(cmd.executable, 'npm');
+      expect(cmd.args, ['publish']);
+    });
+  });
+
   group('TypeScriptPackageManager.lockFile', () {
     test('maps each package manager to its lock file', () {
       expect(TypeScriptPackageManager.pnpm.lockFile, 'pnpm-lock.yaml');

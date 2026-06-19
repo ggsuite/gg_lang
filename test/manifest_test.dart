@@ -166,6 +166,32 @@ environment:
       expect(manifest.spec.file, 'pubspec.yaml');
       expect((await manifest.readVersion()).toString(), '3.1.4');
     });
+
+    group('for a bridge (pubspec.yaml + package.json + tsconfig.json)', () {
+      setUp(() {
+        writePubspec('name: bridge\nversion: 3.1.4\n');
+        writePackageJson('{"name":"@org/bridge","version":"0.4.0"}');
+        File('${dir.path}/tsconfig.json').writeAsStringSync('{}');
+      });
+
+      test('resolves to pubspec.yaml by default', () async {
+        final catalog = LanguageCatalog.fromString(_catalogJson);
+        final manifest = Manifest.detect(dir, catalog);
+        expect(manifest.spec.file, 'pubspec.yaml');
+        expect((await manifest.readVersion()).toString(), '3.1.4');
+      });
+
+      test('resolves to package.json when treatBridgeAsTypeScript', () async {
+        final catalog = LanguageCatalog.fromString(_catalogJson);
+        final manifest = Manifest.detect(
+          dir,
+          catalog,
+          treatBridgeAsTypeScript: true,
+        );
+        expect(manifest.spec.file, 'package.json');
+        expect((await manifest.readVersion()).toString(), '0.4.0');
+      });
+    });
   });
 
   group('Manifest (unknown format)', () {
@@ -229,6 +255,18 @@ const _catalogJson = '''
         "namePath": "name",
         "publishTargetMarker": "publish_to",
         "lockFile": "pubspec.lock"
+      },
+      "commands": {}
+    },
+    "typescript": {
+      "displayName": "TypeScript",
+      "manifest": {
+        "file": "package.json",
+        "format": "json",
+        "versionPath": "version",
+        "namePath": "name",
+        "publishTargetMarker": "private",
+        "lockFile": "package-lock.json"
       },
       "commands": {}
     }

@@ -73,6 +73,22 @@ enum TypeScriptPackageManager {
   ({String executable, List<String> args}) runCommand(String script) {
     return (executable: executable, args: ['run', script]);
   }
+
+  /// Builds the argv to publish the package with this package manager.
+  ///
+  /// - pnpm → `pnpm publish --no-git-checks` — gg manages git itself and
+  ///   publishes from a feature branch, so pnpm's default branch/clean-tree
+  ///   checks (which would abort the publish) must be disabled.
+  /// - yarn → `yarn publish`
+  /// - npm  → `npm publish`
+  ({String executable, List<String> args}) get publishCommand => switch (this) {
+    TypeScriptPackageManager.pnpm => (
+      executable: 'pnpm',
+      args: ['publish', '--no-git-checks'],
+    ),
+    TypeScriptPackageManager.yarn => (executable: 'yarn', args: ['publish']),
+    TypeScriptPackageManager.npm => (executable: 'npm', args: ['publish']),
+  };
 }
 
 // #############################################################################

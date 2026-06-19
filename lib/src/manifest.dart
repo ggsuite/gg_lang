@@ -38,8 +38,21 @@ class Manifest {
   Manifest({required this.directory, required this.spec});
 
   /// Builds a [Manifest] by auto-detecting the project type in [directory].
-  factory Manifest.detect(Directory directory, LanguageCatalog catalog) {
-    final type = detectProjectType(directory);
+  ///
+  /// When [treatBridgeAsTypeScript] is `true`, a cross-language bridge repo
+  /// (pubspec.yaml + package.json + tsconfig.json) resolves to its
+  /// `package.json` manifest via [checkProjectType]. This is what the publish
+  /// and versioning flow wants, where a bridge is published as a TypeScript
+  /// package. The default ([detectProjectType]) keeps the raw precedence where
+  /// a bridge resolves to its `pubspec.yaml`.
+  factory Manifest.detect(
+    Directory directory,
+    LanguageCatalog catalog, {
+    bool treatBridgeAsTypeScript = false,
+  }) {
+    final type = treatBridgeAsTypeScript
+        ? checkProjectType(directory)
+        : detectProjectType(directory);
     return Manifest(directory: directory, spec: catalog.spec(type).manifest);
   }
 
