@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.0] - 2026-06-19
+
+### Changed
+
+- Treat dart-typescript bridge repos as TypeScript for can/do commit, running package.json scripts (test/lint/format:check)
+- Treat dart-typescript bridge repos as TypeScript for can/do review (npm install, skip dart pub get); export isBridgeProject from gg\_one
+- Introduce checkProjectType() as single source of truth for bridge->TypeScript check rule; add .example() real-instance factories & P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
+- Publish bridges as TypeScript: pnpm-aware publish, dual-manifest version bump, non-swallowed publish errors, idempotent resume, review skips merged repos, link: for local TS deps, package.json scripts check
+
 ## [0.1.0] - 2026-06-08
 
 ### Added
@@ -32,5 +41,6 @@ metadata for Dart, Flutter and TypeScript. Extracted from `gg_one` so it can
 be shared by `gg_one`, `gg_test` and `gg_publish` without circular
 dependencies.
 
+[0.2.0]: https://github.com/ggsuite/gg_lang/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/ggsuite/gg_lang/compare/0.0.1...0.1.0
 [0.0.1]: https://github.com/ggsuite/gg_lang/releases/tag/0.0.1

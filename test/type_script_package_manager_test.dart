@@ -76,6 +76,46 @@ void main() {
     });
   });
 
+  group('TypeScriptPackageManager.runCommand', () {
+    test('pnpm uses "pnpm run <script>"', () {
+      final cmd = TypeScriptPackageManager.pnpm.runCommand('test');
+      expect(cmd.executable, 'pnpm');
+      expect(cmd.args, ['run', 'test']);
+    });
+
+    test('yarn uses "yarn run <script>"', () {
+      final cmd = TypeScriptPackageManager.yarn.runCommand('lint');
+      expect(cmd.executable, 'yarn');
+      expect(cmd.args, ['run', 'lint']);
+    });
+
+    test('npm uses "npm run <script>"', () {
+      final cmd = TypeScriptPackageManager.npm.runCommand('format:check');
+      expect(cmd.executable, 'npm');
+      expect(cmd.args, ['run', 'format:check']);
+    });
+  });
+
+  group('TypeScriptPackageManager.publishCommand', () {
+    test('pnpm publishes with --no-git-checks', () {
+      final cmd = TypeScriptPackageManager.pnpm.publishCommand;
+      expect(cmd.executable, 'pnpm');
+      expect(cmd.args, ['publish', '--no-git-checks']);
+    });
+
+    test('yarn uses "yarn publish"', () {
+      final cmd = TypeScriptPackageManager.yarn.publishCommand;
+      expect(cmd.executable, 'yarn');
+      expect(cmd.args, ['publish']);
+    });
+
+    test('npm uses "npm publish"', () {
+      final cmd = TypeScriptPackageManager.npm.publishCommand;
+      expect(cmd.executable, 'npm');
+      expect(cmd.args, ['publish']);
+    });
+  });
+
   group('TypeScriptPackageManager.lockFile', () {
     test('maps each package manager to its lock file', () {
       expect(TypeScriptPackageManager.pnpm.lockFile, 'pnpm-lock.yaml');

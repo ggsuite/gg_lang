@@ -94,6 +94,61 @@ void main() {
     });
   });
 
+  group('isBridgeProject', () {
+    test('is true when pubspec.yaml, package.json and tsconfig coexist', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
+      expect(isBridgeProject(tmp), isTrue);
+      // detectProjectType still reports dart (pubspec precedence).
+      expect(detectProjectType(tmp), ProjectType.dart);
+    });
+
+    test('is false for a pure Dart package', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      expect(isBridgeProject(tmp), isFalse);
+    });
+
+    test('is false for a pure TypeScript project', () {
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
+      expect(isBridgeProject(tmp), isFalse);
+    });
+
+    test('is false when tsconfig.json is missing', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      expect(isBridgeProject(tmp), isFalse);
+    });
+  });
+
+  group('checkProjectType', () {
+    test('resolves a bridge repo to typescript (not dart)', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
+      // detectProjectType would say dart (pubspec precedence); the check
+      // pipeline treats bridges as typescript.
+      expect(detectProjectType(tmp), ProjectType.dart);
+      expect(checkProjectType(tmp), ProjectType.typescript);
+    });
+
+    test('delegates to detectProjectType for a pure Dart package', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      expect(checkProjectType(tmp), ProjectType.dart);
+    });
+
+    test('delegates to detectProjectType for a pure TypeScript project', () {
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
+      expect(checkProjectType(tmp), ProjectType.typescript);
+    });
+
+    test('throws when no project type can be detected', () {
+      expect(() => checkProjectType(tmp), throwsException);
+    });
+  });
+
   group('ProjectType.isDartFamily', () {
     test('is true for Dart and Flutter, false for TypeScript', () {
       expect(ProjectType.dart.isDartFamily, isTrue);

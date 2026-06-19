@@ -64,6 +64,43 @@ ProjectType detectProjectType(Directory directory) {
   );
 }
 
+// #############################################################################
+
+/// Whether [directory] is a cross-language *bridge* project — a repo that
+/// ships both a Dart manifest (`pubspec.yaml`) and a TypeScript manifest
+/// (`package.json` + `tsconfig.json`) side by side.
+///
+/// [detectProjectType] resolves such a directory to [ProjectType.dart],
+/// because pubspec.yaml takes precedence. The gg check pipeline
+/// (analyze/format/tests) treats bridges as TypeScript instead, so it needs
+/// to recognize them explicitly.
+bool isBridgeProject(Directory directory) {
+  final pubspec = File('${directory.path}/pubspec.yaml');
+  final packageJson = File('${directory.path}/package.json');
+  final tsconfig = File('${directory.path}/tsconfig.json');
+  return pubspec.existsSync() &&
+      packageJson.existsSync() &&
+      tsconfig.existsSync();
+}
+
+// #############################################################################
+
+/// The [ProjectType] that gg's check pipeline (analyze / format / tests)
+/// should use for [directory].
+///
+/// This is the single source of truth for the rule "cross-language bridge
+/// repos are checked as TypeScript": a bridge (see [isBridgeProject]) resolves
+/// to [ProjectType.typescript], everything else is delegated to
+/// [detectProjectType]. Prefer this over hand-writing
+/// `isBridgeProject(d) ? ProjectType.typescript : detectProjectType(d)` so the
+/// rule lives in one place.
+///
+/// Like [detectProjectType], throws an [Exception] when [directory] matches no
+/// known project type.
+ProjectType checkProjectType(Directory directory) => isBridgeProject(directory)
+    ? ProjectType.typescript
+    : detectProjectType(directory);
+
 // .............................................................................
 bool _hasTopLevelFlutterKey(String pubspecContent) {
   for (final rawLine in pubspecContent.split('\n')) {
