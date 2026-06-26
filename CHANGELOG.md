@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Preserve dependency constraint operator (^^/\~/exact) through publish
+
 ## [0.2.0] - 2026-06-19
 
 ### Changed
@@ -41,6 +47,7 @@ metadata for Dart, Flutter and TypeScript. Extracted from `gg_one` so it can
 be shared by `gg_one`, `gg_test` and `gg_publish` without circular
 dependencies.
 
+[Unreleased]: https://github.com/ggsuite/gg_lang/compare/0.2.0...HEAD
 [0.2.0]: https://github.com/ggsuite/gg_lang/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/ggsuite/gg_lang/compare/0.0.1...0.1.0
 [0.0.1]: https://github.com/ggsuite/gg_lang/releases/tag/0.0.1
