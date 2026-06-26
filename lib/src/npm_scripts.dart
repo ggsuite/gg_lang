@@ -43,3 +43,29 @@ Map<String, String> readNpmScripts(Directory directory) {
 /// [name].
 bool hasNpmScript(Directory directory, String name) =>
     readNpmScripts(directory).containsKey(name);
+
+// .............................................................................
+/// Whether the `package.json` in [directory] sets `"private": true`.
+///
+/// npm and pnpm refuse to publish a package marked private, so gg's
+/// publish-related checks treat such a package as exempt from the
+/// `prepublishOnly` requirement.
+///
+/// Returns `false` when there is no `package.json`, it cannot be parsed, it is
+/// not a JSON object, or `private` is absent or anything other than the JSON
+/// boolean `true`.
+bool isPrivateNpmPackage(Directory directory) {
+  final file = File('${directory.path}/package.json');
+  if (!file.existsSync()) {
+    return false;
+  }
+  try {
+    final decoded = jsonDecode(file.readAsStringSync());
+    if (decoded is! Map<String, dynamic>) {
+      return false;
+    }
+    return decoded['private'] == true;
+  } catch (_) {
+    return false;
+  }
+}

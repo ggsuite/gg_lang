@@ -71,4 +71,46 @@ void main() {
       expect(hasNpmScript(tmp, 'test'), isFalse);
     });
   });
+
+  group('isPrivateNpmPackage', () {
+    test('is true when private is the JSON boolean true', () {
+      File(
+        '${tmp.path}/package.json',
+      ).writeAsStringSync('{"name":"foo","private":true}');
+      expect(isPrivateNpmPackage(tmp), isTrue);
+    });
+
+    test('is false when private is false', () {
+      File(
+        '${tmp.path}/package.json',
+      ).writeAsStringSync('{"name":"foo","private":false}');
+      expect(isPrivateNpmPackage(tmp), isFalse);
+    });
+
+    test('is false when private is absent', () {
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      expect(isPrivateNpmPackage(tmp), isFalse);
+    });
+
+    test('is false when private is a non-boolean (e.g. the string "true")', () {
+      File(
+        '${tmp.path}/package.json',
+      ).writeAsStringSync('{"name":"foo","private":"true"}');
+      expect(isPrivateNpmPackage(tmp), isFalse);
+    });
+
+    test('is false when package.json is missing', () {
+      expect(isPrivateNpmPackage(tmp), isFalse);
+    });
+
+    test('is false when package.json is not a JSON object', () {
+      File('${tmp.path}/package.json').writeAsStringSync('[1,2,3]');
+      expect(isPrivateNpmPackage(tmp), isFalse);
+    });
+
+    test('is false when package.json is malformed', () {
+      File('${tmp.path}/package.json').writeAsStringSync('{ not json');
+      expect(isPrivateNpmPackage(tmp), isFalse);
+    });
+  });
 }
