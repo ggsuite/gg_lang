@@ -5,9 +5,8 @@
 // found in the LICENSE file in the root of this package.
 
 import 'dart:convert';
-import 'dart:io';
-import 'dart:isolate';
 
+import 'package:gg_lang/src/assets/languages_json.dart';
 import 'package:gg_lang/src/project_type.dart';
 
 // #############################################################################
@@ -278,16 +277,13 @@ class LanguageCatalog {
     return spec;
   }
 
-  /// Loads the catalog from the bundled `languages.json` asset.
-  // coverage:ignore-start
-  static Future<LanguageCatalog> load() async {
-    final uri = await Isolate.resolvePackageUri(
-      Uri.parse('package:gg_lang/src/assets/languages.json'),
-    );
-    final file = File.fromUri(uri!);
-    final source = await file.readAsString();
-    return LanguageCatalog.fromString(source);
-  }
-
-  // coverage:ignore-end
+  /// Loads the bundled catalog.
+  ///
+  /// The catalog is embedded as a Dart constant (see
+  /// `lib/src/assets/languages_json.dart`) instead of being read from the
+  /// `languages.json` asset at runtime, so this also works in AOT-compiled
+  /// executables — there `Isolate.resolvePackageUri` returns null and asset
+  /// files cannot be located.
+  static Future<LanguageCatalog> load() async =>
+      LanguageCatalog.fromString(languagesJsonSource);
 }

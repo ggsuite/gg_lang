@@ -1,0 +1,171 @@
+// @license
+// Copyright (c) 2025 Göran Hegenberg. All Rights Reserved.
+//
+// Use of this source code is governed by terms that can be
+// found in the LICENSE file in the root of this package.
+
+/// The bundled `languages.json` catalog, embedded as a Dart constant.
+///
+/// Embedded so `LanguageCatalog.load` also works in AOT-compiled
+/// executables: `Isolate.resolvePackageUri` returns null there, so the
+/// asset file cannot be located at runtime.
+///
+/// `lib/src/assets/languages.json` stays the editable source of truth —
+/// after changing it, copy its content into this constant. The test
+/// `test/assets/languages_json_test.dart` enforces that both stay in
+/// sync.
+const String languagesJsonSource = r'''
+{
+  "schemaVersion": 1,
+  "languages": {
+    "dart": {
+      "displayName": "Dart",
+      "manifest": {
+        "file": "pubspec.yaml",
+        "format": "yaml",
+        "versionPath": "version",
+        "namePath": "name",
+        "publishTargetMarker": "publish_to",
+        "lockFile": "pubspec.lock"
+      },
+      "registry": {
+        "kind": "http",
+        "url": "https://pub.dev/api/packages/{name}",
+        "latestPath": "latest.version"
+      },
+      "commands": {
+        "install": {
+          "label": "dart pub get --offline",
+          "exec": "dart",
+          "args": ["pub", "get", "--offline"]
+        },
+        "analyze": {
+          "label": "dart analyze",
+          "exec": "dart",
+          "args": ["analyze", "--fatal-infos", "--fatal-warnings"]
+        },
+        "formatFix": {
+          "label": "dart format",
+          "exec": "dart",
+          "args": ["format", ".", "-o", "write", "--set-exit-if-changed"]
+        },
+        "test": {
+          "label": "dart test",
+          "exec": "dart",
+          "args": ["test"]
+        },
+        "publish": {
+          "label": "dart pub publish",
+          "exec": "dart",
+          "args": ["pub", "publish"]
+        }
+      }
+    },
+    "flutter": {
+      "displayName": "Flutter",
+      "manifest": {
+        "file": "pubspec.yaml",
+        "format": "yaml",
+        "versionPath": "version",
+        "namePath": "name",
+        "publishTargetMarker": "publish_to",
+        "lockFile": "pubspec.lock"
+      },
+      "registry": {
+        "kind": "http",
+        "url": "https://pub.dev/api/packages/{name}",
+        "latestPath": "latest.version"
+      },
+      "commands": {
+        "install": {
+          "label": "flutter pub get --offline",
+          "exec": "flutter",
+          "args": ["pub", "get", "--offline"]
+        },
+        "analyze": {
+          "label": "flutter analyze",
+          "exec": "dart",
+          "args": ["analyze", "--fatal-infos", "--fatal-warnings"]
+        },
+        "formatFix": {
+          "label": "dart format",
+          "exec": "dart",
+          "args": ["format", ".", "-o", "write", "--set-exit-if-changed"]
+        },
+        "test": {
+          "label": "flutter test",
+          "exec": "flutter",
+          "args": ["test"]
+        },
+        "publish": {
+          "label": "flutter pub publish",
+          "exec": "flutter",
+          "args": ["pub", "publish"]
+        }
+      }
+    },
+    "typescript": {
+      "displayName": "TypeScript",
+      "manifest": {
+        "file": "package.json",
+        "format": "json",
+        "versionPath": "version",
+        "namePath": "name",
+        "publishTargetMarker": "private",
+        "lockFile": "package-lock.json"
+      },
+      "registry": {
+        "kind": "cli",
+        "command": "registryVersion"
+      },
+      "packageManager": {
+        "wrap": true
+      },
+      "commands": {
+        "install": {
+          "label": "npm install",
+          "exec": "npm",
+          "args": ["install"],
+          "runInShell": true
+        },
+        "analyze": {
+          "label": "tsc --noEmit",
+          "tool": "tsc",
+          "args": ["--noEmit"],
+          "runInShell": true
+        },
+        "formatFix": {
+          "label": "eslint",
+          "tool": "eslint",
+          "args": ["--fix"],
+          "runInShell": true
+        },
+        "formatCheck": {
+          "label": "eslint",
+          "tool": "eslint",
+          "args": [],
+          "runInShell": true
+        },
+        "test": {
+          "label": "vitest run --coverage",
+          "tool": "vitest",
+          "args": ["run", "--coverage"],
+          "runInShell": true
+        },
+        "publish": {
+          "label": "npm publish",
+          "exec": "npm",
+          "args": ["publish"],
+          "runInShell": true
+        },
+        "registryVersion": {
+          "label": "npm view {name} version",
+          "exec": "npm",
+          "args": ["view", "{name}", "version"],
+          "runInShell": true
+        }
+      }
+    }
+  }
+}
+''';

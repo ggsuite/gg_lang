@@ -7,6 +7,7 @@
 /// Shared language catalog and project-type detection for the gg toolchain.
 library;
 
+export 'src/assets/languages_json.dart';
 export 'src/language_catalog.dart';
 export 'src/manifest.dart';
 export 'src/npm_scripts.dart';

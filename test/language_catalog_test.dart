@@ -93,6 +93,18 @@ void main() {
         expect(() => catalog.specByKey('rust'), throwsA(isA<ArgumentError>()));
       });
     });
+
+    group('load', () {
+      test(
+        'returns the embedded catalog (AOT-safe, no asset lookup)',
+        () async {
+          final loaded = await LanguageCatalog.load();
+          expect(loaded.specByKey('dart').displayName, 'Dart');
+          expect(loaded.specByKey('flutter'), isNotNull);
+          expect(loaded.specByKey('typescript').displayName, 'TypeScript');
+        },
+      );
+    });
   });
 
   group('LanguageSpec', () {

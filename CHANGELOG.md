@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2] - 2026-07-15
+
+### Changed
+
+- Make LanguageCatalog.load AOT-safe: embed languages.json as Dart constant instead of Isolate.resolvePackageUri asset lookup
+- Gg Multi: changed references to pub.dev
+
 ## [0.2.1] - 2026-06-26
 
 ### Changed
@@ -47,6 +54,7 @@ metadata for Dart, Flutter and TypeScript. Extracted from `gg_one` so it can
 be shared by `gg_one`, `gg_test` and `gg_publish` without circular
 dependencies.
 
+[0.2.2]: https://github.com/ggsuite/gg_lang/compare/0.2.1...0.2.2
 [0.2.1]: https://github.com/ggsuite/gg_lang/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/ggsuite/gg_lang/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/ggsuite/gg_lang/compare/0.0.1...0.1.0
