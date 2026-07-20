@@ -150,7 +150,9 @@ class RegistrySpec {
     required this.kind,
     this.url,
     this.latestPath,
+    this.versionsPath,
     this.command,
+    this.versionsCommand,
   });
 
   /// Builds a [RegistrySpec] from its JSON representation.
@@ -158,7 +160,9 @@ class RegistrySpec {
     kind: map['kind'] as String,
     url: map['url'] as String?,
     latestPath: map['latestPath'] as String?,
+    versionsPath: map['versionsPath'] as String?,
     command: map['command'] as String?,
+    versionsCommand: map['versionsCommand'] as String?,
   );
 
   /// Either `http` or `cli`.
@@ -171,8 +175,17 @@ class RegistrySpec {
   /// (e.g. `latest.version`).
   final String? latestPath;
 
+  /// For `http`: the dotted path to the list of all published versions in
+  /// the JSON response (e.g. `versions`). Entries may be plain version
+  /// strings or objects carrying a `version` field.
+  final String? versionsPath;
+
   /// For `cli`: the command key in [LanguageSpec.commands] to run.
   final String? command;
+
+  /// For `cli`: the command key in [LanguageSpec.commands] listing all
+  /// published versions as JSON (e.g. `npm view {name} versions --json`).
+  final String? versionsCommand;
 }
 
 // #############################################################################

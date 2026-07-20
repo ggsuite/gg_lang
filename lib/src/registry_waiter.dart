@@ -54,12 +54,20 @@ class RegistryWaiter {
   /// Returns true once the registry's latest version is greater than or equal
   /// to [version] — reliable for the publish flow, where versions only
   /// increase, and where the just-published version becomes the latest.
+  /// Prereleases never become the registry's latest version, so they are
+  /// looked up in the full version list instead.
   Future<bool> isVersionAvailable({
     required String packageName,
     required String version,
   }) async {
+    final target = Version.parse(version);
+
+    if (target.isPreRelease) {
+      return (await _allVersions(packageName)).contains(target);
+    }
+
     final latest = await _latestVersion(packageName);
-    return latest != null && latest >= Version.parse(version);
+    return latest != null && latest >= target;
   }
 
   /// Waits until [version] of [packageName] becomes visible, or throws when
@@ -98,6 +106,17 @@ class RegistryWaiter {
       return await _registry.latestVersion(packageName: packageName);
     } on RegistryException {
       return null;
+    }
+  }
+
+  // ...........................................................................
+  /// Reads all published versions, treating transient registry errors as
+  /// "not available" so a wait keeps polling instead of aborting.
+  Future<List<Version>> _allVersions(String packageName) async {
+    try {
+      return await _registry.allVersions(packageName: packageName);
+    } on RegistryException {
+      return [];
     }
   }
 }

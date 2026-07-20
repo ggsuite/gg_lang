@@ -26,7 +26,8 @@ const _json = '''
       "registry": {
         "kind": "http",
         "url": "https://pub.dev/api/packages/{name}",
-        "latestPath": "latest.version"
+        "latestPath": "latest.version",
+        "versionsPath": "versions"
       },
       "commands": {
         "analyze": {
@@ -46,7 +47,11 @@ const _json = '''
         "publishTargetMarker": "private",
         "lockFile": "package-lock.json"
       },
-      "registry": { "kind": "cli", "command": "registryVersion" },
+      "registry": {
+        "kind": "cli",
+        "command": "registryVersion",
+        "versionsCommand": "registryVersions"
+      },
       "packageManager": { "wrap": true },
       "commands": {
         "analyze": {
@@ -132,14 +137,18 @@ void main() {
         expect(registry?.kind, 'http');
         expect(registry?.url, 'https://pub.dev/api/packages/{name}');
         expect(registry?.latestPath, 'latest.version');
+        expect(registry?.versionsPath, 'versions');
         expect(registry?.command, isNull);
+        expect(registry?.versionsCommand, isNull);
       });
 
       test('parses a cli registry', () {
         final registry = catalog.specByKey('typescript').registry;
         expect(registry?.kind, 'cli');
         expect(registry?.command, 'registryVersion');
+        expect(registry?.versionsCommand, 'registryVersions');
         expect(registry?.url, isNull);
+        expect(registry?.versionsPath, isNull);
       });
     });
 
@@ -225,10 +234,23 @@ void main() {
       final bundled = LanguageCatalog.fromString(source);
       expect(bundled.spec(ProjectType.dart).registry?.kind, 'http');
       expect(bundled.spec(ProjectType.flutter).registry?.kind, 'http');
+      expect(bundled.spec(ProjectType.dart).registry?.versionsPath, 'versions');
+      expect(
+        bundled.spec(ProjectType.flutter).registry?.versionsPath,
+        'versions',
+      );
       expect(bundled.spec(ProjectType.typescript).registry?.kind, 'cli');
       expect(
         bundled.spec(ProjectType.typescript).registry?.command,
         'registryVersion',
+      );
+      expect(
+        bundled.spec(ProjectType.typescript).registry?.versionsCommand,
+        'registryVersions',
+      );
+      expect(
+        bundled.spec(ProjectType.typescript).command('registryVersions').args,
+        ['view', '{name}', 'versions', '--json'],
       );
     });
   });

@@ -18,6 +18,7 @@ const _httpSpec = RegistrySpec(
   kind: 'http',
   url: 'https://pub.dev/api/packages/{name}',
   latestPath: 'latest.version',
+  versionsPath: 'versions',
 );
 
 const _tsLang = LanguageSpec(
@@ -30,12 +31,21 @@ const _tsLang = LanguageSpec(
     publishTargetMarker: 'private',
     lockFile: 'package-lock.json',
   ),
-  registry: RegistrySpec(kind: 'cli', command: 'registryVersion'),
+  registry: RegistrySpec(
+    kind: 'cli',
+    command: 'registryVersion',
+    versionsCommand: 'registryVersions',
+  ),
   commands: {
     'registryVersion': LanguageCommand(
       label: 'npm view {name} version',
       exec: 'npm',
       args: ['view', '{name}', 'version'],
+    ),
+    'registryVersions': LanguageCommand(
+      label: 'npm view {name} versions --json',
+      exec: 'npm',
+      args: ['view', '{name}', 'versions', '--json'],
     ),
   },
 );
@@ -94,6 +104,81 @@ void main() {
         throwsA(isA<RegistryException>()),
       );
     });
+
+    group('allVersions', () {
+      test('returns all versions from a list of version objects', () async {
+        final client = MockClient(
+          (_) async => http.Response(
+            jsonEncode({
+              'versions': [
+                {'version': '1.0.0'},
+                {'version': '1.1.0-rc.1'},
+                {'version': '1.1.0'},
+              ],
+            }),
+            200,
+          ),
+        );
+        final registry = PubDevRegistry(spec: _httpSpec, httpClient: client);
+        final versions = await registry.allVersions(packageName: 'foo');
+        expect(versions.map((v) => v.toString()), [
+          '1.0.0',
+          '1.1.0-rc.1',
+          '1.1.0',
+        ]);
+      });
+
+      test('supports plain version strings as list entries', () async {
+        final client = MockClient(
+          (_) async => http.Response(
+            jsonEncode({
+              'versions': ['1.0.0', '2.0.0'],
+            }),
+            200,
+          ),
+        );
+        final registry = PubDevRegistry(spec: _httpSpec, httpClient: client);
+        final versions = await registry.allVersions(packageName: 'foo');
+        expect(versions.map((v) => v.toString()), ['1.0.0', '2.0.0']);
+      });
+
+      test('returns an empty list on 404 (never published)', () async {
+        final client = MockClient((_) async => http.Response('', 404));
+        final registry = PubDevRegistry(spec: _httpSpec, httpClient: client);
+        expect(await registry.allVersions(packageName: 'foo'), isEmpty);
+      });
+
+      test('throws when the versions path is not a list', () async {
+        final client = MockClient(
+          (_) async => http.Response(jsonEncode({'versions': 'oops'}), 200),
+        );
+        final registry = PubDevRegistry(spec: _httpSpec, httpClient: client);
+        expect(
+          registry.allVersions(packageName: 'foo'),
+          throwsA(isA<RegistryException>()),
+        );
+      });
+
+      test('wraps an unparseable version entry as RegistryException', () async {
+        // A malformed entry must surface as RegistryException (not a raw
+        // FormatException) so callers catching RegistryException handle it.
+        final client = MockClient(
+          (_) async => http.Response(
+            jsonEncode({
+              'versions': [
+                {'version': 'not-a-version'},
+              ],
+            }),
+            200,
+          ),
+        );
+        final registry = PubDevRegistry(spec: _httpSpec, httpClient: client);
+        expect(
+          registry.allVersions(packageName: 'foo'),
+          throwsA(isA<RegistryException>()),
+        );
+      });
+    });
   });
 
   group('NpmRegistry', () {
@@ -135,6 +220,65 @@ void main() {
         registry.latestVersion(packageName: 'ts_pkg'),
         throwsA(isA<RegistryException>()),
       );
+    });
+
+    group('allVersions', () {
+      test('parses the JSON list printed by npm view versions', () async {
+        stub(ProcessResult(0, 0, '["1.0.0", "1.1.0-rc.1", "1.1.0"]\n', ''));
+        final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+        final versions = await registry.allVersions(packageName: 'ts_pkg');
+        expect(versions.map((v) => v.toString()), [
+          '1.0.0',
+          '1.1.0-rc.1',
+          '1.1.0',
+        ]);
+      });
+
+      test('wraps a single JSON string into a one-element list', () async {
+        stub(ProcessResult(0, 0, '"1.0.0"\n', ''));
+        final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+        final versions = await registry.allVersions(packageName: 'ts_pkg');
+        expect(versions.map((v) => v.toString()), ['1.0.0']);
+      });
+
+      test('returns an empty list on an npm E404', () async {
+        stub(ProcessResult(0, 1, '', 'npm ERR! code E404'));
+        final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+        expect(await registry.allVersions(packageName: 'ts_pkg'), isEmpty);
+      });
+
+      test('returns an empty list when stdout is empty', () async {
+        stub(ProcessResult(0, 0, '\n', ''));
+        final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+        expect(await registry.allVersions(packageName: 'ts_pkg'), isEmpty);
+      });
+
+      test('throws on a non-404 npm error', () async {
+        stub(ProcessResult(0, 1, '', 'npm ERR! network failure'));
+        final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+        expect(
+          registry.allVersions(packageName: 'ts_pkg'),
+          throwsA(isA<RegistryException>()),
+        );
+      });
+
+      test('wraps malformed JSON output as RegistryException', () async {
+        stub(ProcessResult(0, 0, 'not json at all', ''));
+        final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+        expect(
+          registry.allVersions(packageName: 'ts_pkg'),
+          throwsA(isA<RegistryException>()),
+        );
+      });
+
+      test('wraps an unparseable version entry as RegistryException', () async {
+        stub(ProcessResult(0, 0, '["1.0.0", "not-a-version"]', ''));
+        final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+        expect(
+          registry.allVersions(packageName: 'ts_pkg'),
+          throwsA(isA<RegistryException>()),
+        );
+      });
     });
   });
 

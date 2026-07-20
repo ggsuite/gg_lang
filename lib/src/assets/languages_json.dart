@@ -31,7 +31,8 @@ const String languagesJsonSource = r'''
       "registry": {
         "kind": "http",
         "url": "https://pub.dev/api/packages/{name}",
-        "latestPath": "latest.version"
+        "latestPath": "latest.version",
+        "versionsPath": "versions"
       },
       "commands": {
         "install": {
@@ -74,7 +75,8 @@ const String languagesJsonSource = r'''
       "registry": {
         "kind": "http",
         "url": "https://pub.dev/api/packages/{name}",
-        "latestPath": "latest.version"
+        "latestPath": "latest.version",
+        "versionsPath": "versions"
       },
       "commands": {
         "install": {
@@ -116,7 +118,8 @@ const String languagesJsonSource = r'''
       },
       "registry": {
         "kind": "cli",
-        "command": "registryVersion"
+        "command": "registryVersion",
+        "versionsCommand": "registryVersions"
       },
       "packageManager": {
         "wrap": true
@@ -162,6 +165,12 @@ const String languagesJsonSource = r'''
           "label": "npm view {name} version",
           "exec": "npm",
           "args": ["view", "{name}", "version"],
+          "runInShell": true
+        },
+        "registryVersions": {
+          "label": "npm view {name} versions --json",
+          "exec": "npm",
+          "args": ["view", "{name}", "versions", "--json"],
           "runInShell": true
         }
       }

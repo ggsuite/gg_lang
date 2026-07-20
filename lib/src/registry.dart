@@ -38,6 +38,10 @@ abstract class Registry {
   /// Returns the latest published [Version], or null when the package has
   /// never been published (404 / not found).
   Future<Version?> latestVersion({required String packageName});
+
+  /// Returns all published [Version]s including prereleases, or an empty
+  /// list when the package has never been published (404 / not found).
+  Future<List<Version>> allVersions({required String packageName});
 }
 
 // #############################################################################
@@ -54,7 +58,53 @@ class PubDevRegistry extends Registry {
 
   @override
   Future<Version?> latestVersion({required String packageName}) async {
-    final url = (_spec.url ?? '').replaceAll('{name}', packageName);
+    final url = _url(packageName);
+    final body = await _getBody(url);
+    if (body == null) return null;
+
+    final raw = _resolvePath(body, _spec.latestPath ?? 'latest.version');
+    if (raw == null) {
+      throw RegistryException(
+        'No "${_spec.latestPath}" in response from $url.',
+      );
+    }
+    return Version.parse(raw.toString());
+  }
+
+  @override
+  Future<List<Version>> allVersions({required String packageName}) async {
+    final url = _url(packageName);
+    final body = await _getBody(url);
+    if (body == null) return [];
+
+    final path = _spec.versionsPath ?? 'versions';
+    final raw = _resolvePath(body, path);
+    if (raw is! List) {
+      throw RegistryException('No "$path" list in response from $url.');
+    }
+
+    // pub.dev lists versions as objects carrying a `version` field; plain
+    // string entries are supported for simpler registries. A malformed entry
+    // is surfaced as a RegistryException (like every other registry error),
+    // so callers that only catch RegistryException are not crashed by a raw
+    // FormatException.
+    return raw.map((entry) {
+      final value = entry is Map ? entry['version'] : entry;
+      try {
+        return Version.parse(value.toString());
+      } on FormatException catch (e) {
+        throw RegistryException('Invalid version "$value" from $url: $e');
+      }
+    }).toList();
+  }
+
+  // ...........................................................................
+  String _url(String packageName) =>
+      (_spec.url ?? '').replaceAll('{name}', packageName);
+
+  // ...........................................................................
+  /// Fetches and decodes the JSON body behind [url]. Returns null on 404.
+  Future<Map<String, dynamic>?> _getBody(String url) async {
     final client = _httpClient ?? http.Client();
 
     late http.Response response;
@@ -71,14 +121,7 @@ class PubDevRegistry extends Registry {
       throw RegistryException('Error ${response.statusCode} querying $url.');
     }
 
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final raw = _resolvePath(body, _spec.latestPath ?? 'latest.version');
-    if (raw == null) {
-      throw RegistryException(
-        'No "${_spec.latestPath}" in response from $url.',
-      );
-    }
-    return Version.parse(raw.toString());
+    return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
   // ...........................................................................
@@ -114,6 +157,37 @@ class NpmRegistry extends Registry {
   @override
   Future<Version?> latestVersion({required String packageName}) async {
     final commandKey = _spec.registry?.command ?? 'registryVersion';
+    final stdout = await _runViewCommand(commandKey, packageName);
+
+    if (stdout == null || stdout.isEmpty) return null;
+    return Version.parse(stdout);
+  }
+
+  @override
+  Future<List<Version>> allVersions({required String packageName}) async {
+    final commandKey = _spec.registry?.versionsCommand ?? 'registryVersions';
+    final stdout = await _runViewCommand(commandKey, packageName);
+
+    if (stdout == null || stdout.isEmpty) return [];
+
+    // `npm view <name> versions --json` prints a JSON list, or a single
+    // JSON string when only one version has ever been published. Malformed
+    // JSON or an unparseable version is surfaced as a RegistryException so
+    // callers that only catch RegistryException are not crashed by a raw
+    // FormatException.
+    try {
+      final decoded = jsonDecode(stdout);
+      final list = decoded is List ? decoded : [decoded];
+      return list.map((entry) => Version.parse(entry.toString())).toList();
+    } on FormatException catch (e) {
+      throw RegistryException('Invalid versions output for $packageName: $e');
+    }
+  }
+
+  // ...........................................................................
+  /// Runs the catalog command behind [commandKey] and returns its trimmed
+  /// stdout. Returns null when the package is not found (404).
+  Future<String?> _runViewCommand(String commandKey, String packageName) async {
     final command = _spec.command(commandKey).withValues({'name': packageName});
 
     final executable = command.exec ?? command.tool!;
@@ -133,8 +207,7 @@ class NpmRegistry extends Registry {
       );
     }
 
-    if (stdout.isEmpty) return null;
-    return Version.parse(stdout);
+    return stdout;
   }
 }
 

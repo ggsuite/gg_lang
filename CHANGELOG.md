@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3] - 2026-07-20
+
+### Added
+
+- Add rc prerelease channel to gg do publish (channel field/flag, X.Y.Z-rc.N computation, npm --tag rc, single + multi repo)
+- Address review: wrap registry version-parse errors as RegistryException, clarify spent-version rc message, lock cider rc changelog format
+
 ## [0.2.2] - 2026-07-15
 
 ### Changed
@@ -54,6 +61,7 @@ metadata for Dart, Flutter and TypeScript. Extracted from `gg_one` so it can
 be shared by `gg_one`, `gg_test` and `gg_publish` without circular
 dependencies.
 
+[0.2.3]: https://github.com/ggsuite/gg_lang/compare/0.2.2...0.2.3
 [0.2.2]: https://github.com/ggsuite/gg_lang/compare/0.2.1...0.2.2
 [0.2.1]: https://github.com/ggsuite/gg_lang/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/ggsuite/gg_lang/compare/0.1.0...0.2.0

@@ -72,6 +72,58 @@ void main() {
           isFalse,
         );
       });
+
+      group('for a prerelease version', () {
+        void mockAllVersions(List<Version> versions) {
+          when(
+            () => registry.allVersions(packageName: any(named: 'packageName')),
+          ).thenAnswer((_) async => versions);
+        }
+
+        test('true when the full version list contains it', () async {
+          // The latest version stays on the stable release — a prerelease
+          // must still be found.
+          mockAllVersions([Version(1, 2, 3), Version.parse('1.3.0-rc.1')]);
+          final waiter = RegistryWaiter(registry: registry);
+          expect(
+            await waiter.isVersionAvailable(
+              packageName: 'a',
+              version: '1.3.0-rc.1',
+            ),
+            isTrue,
+          );
+          verifyNever(
+            () =>
+                registry.latestVersion(packageName: any(named: 'packageName')),
+          );
+        });
+
+        test('false when the full version list lacks it', () async {
+          mockAllVersions([Version(1, 2, 3)]);
+          final waiter = RegistryWaiter(registry: registry);
+          expect(
+            await waiter.isVersionAvailable(
+              packageName: 'a',
+              version: '1.3.0-rc.1',
+            ),
+            isFalse,
+          );
+        });
+
+        test('treats transient registry errors as not available', () async {
+          when(
+            () => registry.allVersions(packageName: any(named: 'packageName')),
+          ).thenThrow(RegistryException('boom'));
+          final waiter = RegistryWaiter(registry: registry);
+          expect(
+            await waiter.isVersionAvailable(
+              packageName: 'a',
+              version: '1.3.0-rc.1',
+            ),
+            isFalse,
+          );
+        });
+      });
     });
 
     group('waitUntilVersionAvailable', () {
