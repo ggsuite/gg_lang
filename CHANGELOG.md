@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.4] - 2026-07-22
+
+### Changed
+
+- Run npm registry lookups in the package directory so the project-level .npmrc with private feeds is honored
+
+### Fixed
+
+- Fix .gitignore so .gg/.gg.json is trackable and expose allLockFileNames for lock-file classification
+
 ## [0.2.3] - 2026-07-20
 
 ### Added
@@ -61,6 +71,7 @@ metadata for Dart, Flutter and TypeScript. Extracted from `gg_one` so it can
 be shared by `gg_one`, `gg_test` and `gg_publish` without circular
 dependencies.
 
+[0.2.4]: https://github.com/ggsuite/gg_lang/compare/0.2.3...0.2.4
 [0.2.3]: https://github.com/ggsuite/gg_lang/compare/0.2.2...0.2.3
 [0.2.2]: https://github.com/ggsuite/gg_lang/compare/0.2.1...0.2.2
 [0.2.1]: https://github.com/ggsuite/gg_lang/compare/0.2.0...0.2.1

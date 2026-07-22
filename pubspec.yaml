@@ -1,6 +1,6 @@
 name: gg_lang
 description: Shared language catalog and project-type detection for the gg toolchain.
-version: 0.2.3
+version: 0.2.4
 repository: https://github.com/ggsuite/gg_lang.git
 
 environment:

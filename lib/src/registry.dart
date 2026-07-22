@@ -144,15 +144,21 @@ class PubDevRegistry extends Registry {
 /// npm implementation (TypeScript) shelling out via the catalog command
 /// (`npm view <name> version`).
 class NpmRegistry extends Registry {
-  /// Constructor.
+  /// Constructor. [workingDirectory] should be the package directory: npm
+  /// resolves the project-level `.npmrc` from its working directory, so
+  /// without it scoped registries (e.g. a private Azure Artifacts feed) are
+  /// missed and their packages look unpublished.
   NpmRegistry({
     required LanguageSpec spec,
     GgProcessWrapper processWrapper = const GgProcessWrapper(),
+    String? workingDirectory,
   }) : _spec = spec,
-       _processWrapper = processWrapper;
+       _processWrapper = processWrapper,
+       _workingDirectory = workingDirectory;
 
   final LanguageSpec _spec;
   final GgProcessWrapper _processWrapper;
+  final String? _workingDirectory;
 
   @override
   Future<Version?> latestVersion({required String packageName}) async {
@@ -195,6 +201,7 @@ class NpmRegistry extends Registry {
       executable,
       command.args,
       runInShell: command.runInShell,
+      workingDirectory: _workingDirectory,
     );
 
     final stdout = (result.stdout as String).trim();
@@ -227,8 +234,14 @@ class RegistryFactory {
   final GgProcessWrapper _processWrapper;
 
   /// Returns a [Registry] for [type] using [spec]. Throws when the language
-  /// has no registry configured or an unknown kind.
-  Registry forProjectType(ProjectType type, {required LanguageSpec spec}) {
+  /// has no registry configured or an unknown kind. [workingDirectory] is the
+  /// package directory; CLI registries run their lookups there so npm picks
+  /// up the project-level `.npmrc` (scoped/private registries).
+  Registry forProjectType(
+    ProjectType type, {
+    required LanguageSpec spec,
+    String? workingDirectory,
+  }) {
     final registry = spec.registry;
     if (registry == null) {
       throw RegistryException(
@@ -240,7 +253,11 @@ class RegistryFactory {
       case 'http':
         return PubDevRegistry(spec: registry, httpClient: _httpClient);
       case 'cli':
-        return NpmRegistry(spec: spec, processWrapper: _processWrapper);
+        return NpmRegistry(
+          spec: spec,
+          processWrapper: _processWrapper,
+          workingDirectory: workingDirectory,
+        );
       default:
         throw RegistryException('Unknown registry kind "${registry.kind}".');
     }

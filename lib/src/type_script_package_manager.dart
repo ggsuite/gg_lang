@@ -118,3 +118,16 @@ String lockFileFor(Directory directory) {
       ? 'pubspec.lock'
       : detectTypeScriptPackageManager(directory).lockFile;
 }
+
+// #############################################################################
+
+/// All lock file names any supported language or package manager writes.
+///
+/// Unlike [lockFileFor] this is not tied to one project type: bridge repos
+/// (pubspec.yaml + package.json) can carry lock files of both ecosystems, so
+/// callers that classify lock-file changes (e.g. as regenerable drift) need
+/// the full set.
+final Set<String> allLockFileNames = {
+  'pubspec.lock',
+  for (final manager in TypeScriptPackageManager.values) manager.lockFile,
+};
