@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.4] - 2026-07-22
 
 ### Changed
 
@@ -71,7 +71,7 @@ metadata for Dart, Flutter and TypeScript. Extracted from `gg_one` so it can
 be shared by `gg_one`, `gg_test` and `gg_publish` without circular
 dependencies.
 
-[Unreleased]: https://github.com/ggsuite/gg_lang/compare/0.2.3...HEAD
+[0.2.4]: https://github.com/ggsuite/gg_lang/compare/0.2.3...0.2.4
 [0.2.3]: https://github.com/ggsuite/gg_lang/compare/0.2.2...0.2.3
 [0.2.2]: https://github.com/ggsuite/gg_lang/compare/0.2.1...0.2.2
 [0.2.1]: https://github.com/ggsuite/gg_lang/compare/0.2.0...0.2.1
