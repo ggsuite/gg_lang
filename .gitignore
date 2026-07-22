@@ -11,3 +11,4 @@ coverage/
 # directory, so the »!«-negation below would have no effect.
 .gg/*
 !.gg/.gg.json
+.gg/.gg-publish.json
