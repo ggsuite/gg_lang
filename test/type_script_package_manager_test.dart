@@ -139,4 +139,15 @@ void main() {
       expect(lockFileFor(tmp), 'pnpm-lock.yaml');
     });
   });
+
+  group('allLockFileNames', () {
+    test('contains the lock files of all languages and package managers', () {
+      expect(allLockFileNames, {
+        'pubspec.lock',
+        'pnpm-lock.yaml',
+        'yarn.lock',
+        'package-lock.json',
+      });
+    });
+  });
 }

@@ -5,9 +5,9 @@ build/
 pubspec.lock
 
 # gg
-.gg/
-.gg.json
 coverage/
+# Ignore .gg contents, but keep the check-state file trackable. A bare
+# ».gg/« rule must not be used: git never descends into an excluded
+# directory, so the »!«-negation below would have no effect.
 .gg/*
 !.gg/.gg.json
-.gg/.gg-publish.json

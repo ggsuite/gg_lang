@@ -6,6 +6,10 @@
 
 - Run npm registry lookups in the package directory so the project-level .npmrc with private feeds is honored
 
+### Fixed
+
+- Fix .gitignore so .gg/.gg.json is trackable and expose allLockFileNames for lock-file classification
+
 ## [0.2.3] - 2026-07-20
 
 ### Added
