@@ -222,6 +222,33 @@ void main() {
       );
     });
 
+    test('runs npm in the given working directory', () async {
+      // npm resolves the project-level .npmrc from its CWD — without it,
+      // packages on scoped/private registries look unpublished.
+      when(
+        () => wrapper.run(
+          any(),
+          any(),
+          runInShell: any(named: 'runInShell'),
+          workingDirectory: any(named: 'workingDirectory'),
+        ),
+      ).thenAnswer((_) async => ProcessResult(0, 0, '4.5.6\n', ''));
+      final registry = NpmRegistry(
+        spec: _tsLang,
+        processWrapper: wrapper,
+        workingDirectory: '/pkg/dir',
+      );
+      await registry.latestVersion(packageName: 'ts_pkg');
+      verify(
+        () => wrapper.run(
+          any(),
+          any(),
+          runInShell: any(named: 'runInShell'),
+          workingDirectory: '/pkg/dir',
+        ),
+      ).called(1);
+    });
+
     group('allVersions', () {
       test('parses the JSON list printed by npm view versions', () async {
         stub(ProcessResult(0, 0, '["1.0.0", "1.1.0-rc.1", "1.1.0"]\n', ''));
@@ -300,6 +327,32 @@ void main() {
         spec: _tsLang,
       );
       expect(registry, isA<NpmRegistry>());
+    });
+
+    test('forwards the working directory to the NpmRegistry', () async {
+      final wrapper = MockGgProcessWrapper();
+      when(
+        () => wrapper.run(
+          any(),
+          any(),
+          runInShell: any(named: 'runInShell'),
+          workingDirectory: any(named: 'workingDirectory'),
+        ),
+      ).thenAnswer((_) async => ProcessResult(0, 0, '1.0.0\n', ''));
+      final registry = RegistryFactory(processWrapper: wrapper).forProjectType(
+        ProjectType.typescript,
+        spec: _tsLang,
+        workingDirectory: '/pkg/dir',
+      );
+      await registry.latestVersion(packageName: 'ts_pkg');
+      verify(
+        () => wrapper.run(
+          any(),
+          any(),
+          runInShell: any(named: 'runInShell'),
+          workingDirectory: '/pkg/dir',
+        ),
+      ).called(1);
     });
 
     test('throws when no registry is configured', () {
