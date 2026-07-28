@@ -194,8 +194,50 @@ void main() {
       ).thenAnswer((_) async => result);
     }
 
-    test('returns the version printed by npm view', () async {
-      stub(ProcessResult(0, 0, '4.5.6\n', ''));
+    test('returns the highest published version', () async {
+      stub(ProcessResult(0, 0, '["1.0.0", "4.5.6", "2.0.0"]\n', ''));
+      final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+      final version = await registry.latestVersion(packageName: 'ts_pkg');
+      expect(version.toString(), '4.5.6');
+    });
+
+    test('ignores the "latest" dist-tag', () async {
+      // A private feed (e.g. Azure Artifacts) can leave the "latest" dist-tag
+      // pointing at an older release. `npm view <name> version` would then
+      // report 0.0.0 and make 0.0.1 look unpublished. The version list is
+      // authoritative, so the lookup must not go through the dist-tag.
+      stub(ProcessResult(0, 0, '["0.0.0", "0.0.1"]\n', ''));
+      final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+      final version = await registry.latestVersion(packageName: 'ts_pkg');
+      expect(version.toString(), '0.0.1');
+
+      // The versions command is used, not the single-version one.
+      verify(
+        () => wrapper.run('npm', [
+          'view',
+          'ts_pkg',
+          'versions',
+          '--json',
+        ], runInShell: any(named: 'runInShell')),
+      ).called(1);
+    });
+
+    test('prefers a stable release over a higher prerelease', () async {
+      stub(ProcessResult(0, 0, '["1.0.0", "1.1.0-rc.1"]\n', ''));
+      final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+      final version = await registry.latestVersion(packageName: 'ts_pkg');
+      expect(version.toString(), '1.0.0');
+    });
+
+    test('falls back to prereleases when nothing stable exists', () async {
+      stub(ProcessResult(0, 0, '["1.0.0-rc.1", "1.0.0-rc.2"]\n', ''));
+      final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
+      final version = await registry.latestVersion(packageName: 'ts_pkg');
+      expect(version.toString(), '1.0.0-rc.2');
+    });
+
+    test('handles a single published version', () async {
+      stub(ProcessResult(0, 0, '"4.5.6"\n', ''));
       final registry = NpmRegistry(spec: _tsLang, processWrapper: wrapper);
       final version = await registry.latestVersion(packageName: 'ts_pkg');
       expect(version.toString(), '4.5.6');
@@ -232,7 +274,7 @@ void main() {
           runInShell: any(named: 'runInShell'),
           workingDirectory: any(named: 'workingDirectory'),
         ),
-      ).thenAnswer((_) async => ProcessResult(0, 0, '4.5.6\n', ''));
+      ).thenAnswer((_) async => ProcessResult(0, 0, '["4.5.6"]\n', ''));
       final registry = NpmRegistry(
         spec: _tsLang,
         processWrapper: wrapper,
@@ -338,7 +380,7 @@ void main() {
           runInShell: any(named: 'runInShell'),
           workingDirectory: any(named: 'workingDirectory'),
         ),
-      ).thenAnswer((_) async => ProcessResult(0, 0, '1.0.0\n', ''));
+      ).thenAnswer((_) async => ProcessResult(0, 0, '["1.0.0"]\n', ''));
       final registry = RegistryFactory(processWrapper: wrapper).forProjectType(
         ProjectType.typescript,
         spec: _tsLang,

@@ -1,5 +1,17 @@
 # Changelog
 
+## \[0.2.5\] - 2026-07-27
+
+### Fixed
+
+- NpmRegistry.latestVersion no longer reads the "latest" dist-tag. Private feeds (e.g. Azure Artifacts) can leave the tag pointing at an older release, which made an already published version look unpublished and rejected the correct next version. The published version list is now authoritative, preferring the highest stable release and falling back to prereleases only when nothing stable exists.
+
+## [Unreleased]
+
+### Changed
+
+- Do not trust the npm latest dist-tag when reading the published version
+
 ## [0.2.4] - 2026-07-22
 
 ### Changed
@@ -71,6 +83,7 @@ metadata for Dart, Flutter and TypeScript. Extracted from `gg_one` so it can
 be shared by `gg_one`, `gg_test` and `gg_publish` without circular
 dependencies.
 
+[Unreleased]: https://github.com/ggsuite/gg_lang/compare/0.2.4...HEAD
 [0.2.4]: https://github.com/ggsuite/gg_lang/compare/0.2.3...0.2.4
 [0.2.3]: https://github.com/ggsuite/gg_lang/compare/0.2.2...0.2.3
 [0.2.2]: https://github.com/ggsuite/gg_lang/compare/0.2.1...0.2.2

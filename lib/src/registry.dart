@@ -142,7 +142,7 @@ class PubDevRegistry extends Registry {
 // #############################################################################
 
 /// npm implementation (TypeScript) shelling out via the catalog command
-/// (`npm view <name> version`).
+/// (`npm view <name> versions --json`).
 class NpmRegistry extends Registry {
   /// Constructor. [workingDirectory] should be the package directory: npm
   /// resolves the project-level `.npmrc` from its working directory, so
@@ -162,11 +162,20 @@ class NpmRegistry extends Registry {
 
   @override
   Future<Version?> latestVersion({required String packageName}) async {
-    final commandKey = _spec.registry?.command ?? 'registryVersion';
-    final stdout = await _runViewCommand(commandKey, packageName);
+    // Deliberately not `npm view <name> version`: that returns the "latest"
+    // dist-tag, which is not the highest published version. Private feeds
+    // (e.g. Azure Artifacts) can leave the tag pointing at an older release,
+    // which would make an already published version look unpublished.
+    // The full version list is authoritative.
+    final versions = await allVersions(packageName: packageName);
+    if (versions.isEmpty) return null;
 
-    if (stdout == null || stdout.isEmpty) return null;
-    return Version.parse(stdout);
+    // Stable releases win over prereleases; prereleases only count when
+    // nothing stable has been published yet.
+    final stable = versions.where((v) => !v.isPreRelease).toList();
+    final candidates = stable.isNotEmpty ? stable : versions;
+
+    return candidates.reduce((a, b) => a > b ? a : b);
   }
 
   @override
