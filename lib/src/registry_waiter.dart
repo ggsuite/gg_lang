@@ -4,6 +4,7 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
+import 'package:gg_console_colors/gg_console_colors.dart';
 import 'package:gg_lang/src/registry.dart';
 import 'package:mocktail/mocktail.dart' as mocktail;
 import 'package:pub_semver/pub_semver.dart';
@@ -104,11 +105,18 @@ class RegistryWaiter {
     final start = _now();
     final deadline = start.add(timeout);
     final url = statusUrlFor(packageName: packageName);
-    final urlHint = url == null ? '' : '\nCheck the status here: $url';
+
+    // Status messages are printed dark gray, the status url blue.
+    final urlHint = url == null
+        ? ''
+        : '\n${darkGray('Check the status here:')} ${blue(url)}';
 
     _log?.call(
-      'Waiting until $packageName $version appears on $registryName '
-      '(up to ${_format(timeout)}).$urlHint',
+      darkGray(
+            'Waiting until $packageName $version appears on $registryName '
+            '(up to ${_format(timeout)}).',
+          ) +
+          urlHint,
     );
 
     var lastProgress = start;
@@ -118,7 +126,9 @@ class RegistryWaiter {
         version: version,
       );
       if (available) {
-        _log?.call('$packageName $version is available on $registryName.');
+        _log?.call(
+          green('$packageName $version is available on $registryName.'),
+        );
         return;
       }
 
@@ -127,15 +137,18 @@ class RegistryWaiter {
         throw Exception(
           'Timed out waiting for $packageName $version to become '
           'available on $registryName after ${timeout.inSeconds} '
-          'seconds.$urlHint',
+          'seconds.${url == null ? '' : '\nCheck the status here: $url'}',
         );
       }
 
       if (now.difference(lastProgress) >= progressInterval) {
         lastProgress = now;
         _log?.call(
-          'Still waiting for $packageName $version on $registryName '
-          '(${_format(now.difference(start))} elapsed).$urlHint',
+          darkGray(
+                'Still waiting for $packageName $version on $registryName '
+                '(${_format(now.difference(start))} elapsed).',
+              ) +
+              urlHint,
         );
       }
 
