@@ -290,7 +290,20 @@ class LanguageCatalog {
   };
 
   /// Returns the [LanguageSpec] for [type].
-  LanguageSpec spec(ProjectType type) => specByKey(_keys[type]!);
+  ///
+  /// Throws an [ArgumentError] for [ProjectType.none] — a project without a
+  /// manifest has no language commands, manifest or registry.
+  LanguageSpec spec(ProjectType type) {
+    final key = _keys[type];
+    if (key == null) {
+      throw ArgumentError(
+        'No language spec exists for ProjectType.${type.name} — '
+        'a project without a manifest has no language commands, '
+        'manifest or registry.',
+      );
+    }
+    return specByKey(key);
+  }
 
   /// Returns the [LanguageSpec] registered under [key]. Throws when unknown.
   LanguageSpec specByKey(String key) {

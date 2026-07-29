@@ -192,6 +192,20 @@ environment:
         expect((await manifest.readVersion()).toString(), '0.4.0');
       });
     });
+
+    test('throws a ManifestException when the directory has no manifest', () {
+      final catalog = LanguageCatalog.fromString(_catalogJson);
+      expect(
+        () => Manifest.detect(dir, catalog),
+        throwsA(
+          isA<ManifestException>().having(
+            (e) => e.message,
+            'message',
+            contains('No manifest'),
+          ),
+        ),
+      );
+    });
   });
 
   group('Manifest (unknown format)', () {

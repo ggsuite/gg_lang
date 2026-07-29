@@ -112,8 +112,17 @@ TypeScriptPackageManager detectTypeScriptPackageManager(Directory directory) {
 /// `pubspec.lock` for Dart/Flutter, and the package-manager-specific lock
 /// file for TypeScript (`package-lock.json` for npm, `yarn.lock` for yarn,
 /// `pnpm-lock.yaml` for pnpm — detected from the lock files present).
+///
+/// Throws an [ArgumentError] for [ProjectType.none] — a project without a
+/// manifest has no lock file.
 String lockFileFor(Directory directory) {
   final type = detectProjectType(directory);
+  if (type == ProjectType.none) {
+    throw ArgumentError(
+      'No lock file exists for "${directory.path}" — '
+      'a project without a manifest has no lock file.',
+    );
+  }
   return type.isDartFamily
       ? 'pubspec.lock'
       : detectTypeScriptPackageManager(directory).lockFile;

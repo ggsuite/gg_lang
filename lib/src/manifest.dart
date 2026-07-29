@@ -45,6 +45,9 @@ class Manifest {
   /// and versioning flow wants, where a bridge is published as a TypeScript
   /// package. The default ([detectProjectType]) keeps the raw precedence where
   /// a bridge resolves to its `pubspec.yaml`.
+  ///
+  /// Throws a [ManifestException] when [directory] contains no manifest at
+  /// all ([ProjectType.none]).
   factory Manifest.detect(
     Directory directory,
     LanguageCatalog catalog, {
@@ -53,6 +56,12 @@ class Manifest {
     final type = treatBridgeAsTypeScript
         ? checkProjectType(directory)
         : detectProjectType(directory);
+    if (type == ProjectType.none) {
+      throw ManifestException(
+        'No manifest (pubspec.yaml / package.json) found in '
+        '"${directory.path}".',
+      );
+    }
     return Manifest(directory: directory, spec: catalog.spec(type).manifest);
   }
 

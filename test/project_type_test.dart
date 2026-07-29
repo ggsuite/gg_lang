@@ -75,15 +75,20 @@ void main() {
     });
 
     test(
-      'throws when package.json is present but tsconfig.json is missing',
+      'returns none when package.json is present but tsconfig.json is missing',
       () {
         File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
-        expect(() => detectProjectType(tmp), throwsException);
+        expect(detectProjectType(tmp), ProjectType.none);
       },
     );
 
-    test('throws when directory is empty', () {
-      expect(() => detectProjectType(tmp), throwsException);
+    test('returns none when directory is empty', () {
+      expect(detectProjectType(tmp), ProjectType.none);
+    });
+
+    test('returns none when only tsconfig.json is present', () {
+      File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
+      expect(detectProjectType(tmp), ProjectType.none);
     });
 
     test('pubspec.yaml takes precedence over package.json', () {
@@ -144,16 +149,26 @@ void main() {
       expect(checkProjectType(tmp), ProjectType.typescript);
     });
 
-    test('throws when no project type can be detected', () {
-      expect(() => checkProjectType(tmp), throwsException);
+    test('returns none when no project type can be detected', () {
+      expect(checkProjectType(tmp), ProjectType.none);
     });
   });
 
   group('ProjectType.isDartFamily', () {
-    test('is true for Dart and Flutter, false for TypeScript', () {
+    test('is true for Dart and Flutter, false for TypeScript and none', () {
       expect(ProjectType.dart.isDartFamily, isTrue);
       expect(ProjectType.flutter.isDartFamily, isTrue);
       expect(ProjectType.typescript.isDartFamily, isFalse);
+      expect(ProjectType.none.isDartFamily, isFalse);
+    });
+  });
+
+  group('ProjectType.hasManifest', () {
+    test('is true for all types except none', () {
+      expect(ProjectType.dart.hasManifest, isTrue);
+      expect(ProjectType.flutter.hasManifest, isTrue);
+      expect(ProjectType.typescript.hasManifest, isTrue);
+      expect(ProjectType.none.hasManifest, isFalse);
     });
   });
 }
