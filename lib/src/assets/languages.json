@@ -14,6 +14,7 @@
       "registry": {
         "kind": "http",
         "url": "https://pub.dev/api/packages/{name}",
+        "statusUrl": "https://pub.dev/packages/{name}/versions",
         "latestPath": "latest.version",
         "versionsPath": "versions"
       },
@@ -58,6 +59,7 @@
       "registry": {
         "kind": "http",
         "url": "https://pub.dev/api/packages/{name}",
+        "statusUrl": "https://pub.dev/packages/{name}/versions",
         "latestPath": "latest.version",
         "versionsPath": "versions"
       },
@@ -101,6 +103,7 @@
       },
       "registry": {
         "kind": "cli",
+        "statusUrl": "https://www.npmjs.com/package/{name}?activeTab=versions",
         "command": "registryVersion",
         "versionsCommand": "registryVersions"
       },

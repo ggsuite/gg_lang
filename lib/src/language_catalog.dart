@@ -149,6 +149,7 @@ class RegistrySpec {
   const RegistrySpec({
     required this.kind,
     this.url,
+    this.statusUrl,
     this.latestPath,
     this.versionsPath,
     this.command,
@@ -159,6 +160,7 @@ class RegistrySpec {
   factory RegistrySpec.fromMap(Map<String, dynamic> map) => RegistrySpec(
     kind: map['kind'] as String,
     url: map['url'] as String?,
+    statusUrl: map['statusUrl'] as String?,
     latestPath: map['latestPath'] as String?,
     versionsPath: map['versionsPath'] as String?,
     command: map['command'] as String?,
@@ -170,6 +172,15 @@ class RegistrySpec {
 
   /// For `http`: the request URL with a `{name}` placeholder.
   final String? url;
+
+  /// A human-facing web page with a `{name}` placeholder where the publish
+  /// status of a package can be checked (e.g. the pub.dev versions page).
+  final String? statusUrl;
+
+  /// Returns [statusUrl] with the `{name}` placeholder resolved to
+  /// [packageName], or null when no status url is configured.
+  String? statusUrlFor(String packageName) =>
+      statusUrl?.replaceAll('{name}', Uri.encodeComponent(packageName));
 
   /// For `http`: the dotted path to the version string in the JSON response
   /// (e.g. `latest.version`).

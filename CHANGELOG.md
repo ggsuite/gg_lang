@@ -1,9 +1,16 @@
 # Changelog
 
-## \[0.2.5\] - 2026-07-27
+## [Unreleased]
+
+### Added
+
+- RegistrySpec.statusUrl + statusUrlFor: human-facing status page url (pub.dev versions page, npmjs.com package page) resolved from the language catalog
+- RegistryWaiter: optional log callback and statusUrl — announces the wait incl. the status page url, reports periodic progress and includes the url in the timeout error
+- Add registry request timeouts, RegistryWaiter logging and status urls
 
 ### Fixed
 
+- PubDevRegistry and NpmRegistry now bound every single lookup with a request timeout (RegistryException instead of hanging forever on a stalled HTTP connection or an npm process waiting for interactive input)
 - NpmRegistry.latestVersion no longer reads the "latest" dist-tag. Private feeds (e.g. Azure Artifacts) can leave the tag pointing at an older release, which made an already published version look unpublished and rejected the correct next version. The published version list is now authoritative, preferring the highest stable release and falling back to prereleases only when nothing stable exists.
 
 ## [0.2.5] - 2026-07-28
@@ -83,6 +90,7 @@ metadata for Dart, Flutter and TypeScript. Extracted from `gg_one` so it can
 be shared by `gg_one`, `gg_test` and `gg_publish` without circular
 dependencies.
 
+[Unreleased]: https://github.com/ggsuite/gg_lang/compare/0.2.5...HEAD
 [0.2.5]: https://github.com/ggsuite/gg_lang/compare/0.2.4...0.2.5
 [0.2.4]: https://github.com/ggsuite/gg_lang/compare/0.2.3...0.2.4
 [0.2.3]: https://github.com/ggsuite/gg_lang/compare/0.2.2...0.2.3
