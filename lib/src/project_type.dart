@@ -18,6 +18,15 @@ enum ProjectType {
 
   /// A TypeScript project (package.json + tsconfig.json).
   typescript,
+
+  /// A directory without a recognizable language manifest — no pubspec.yaml
+  /// and no package.json + tsconfig.json pair.
+  ///
+  /// gg runs its plain git workflow on such projects: language checks
+  /// (analyze / format / build / tests) are skipped and the version lives
+  /// exclusively in git tags. Note that a `package.json` without a
+  /// `tsconfig.json` also resolves to this type.
+  none,
 }
 
 /// Convenience predicates on [ProjectType].
@@ -29,6 +38,13 @@ extension ProjectTypeX on ProjectType {
   /// commands branch on exactly this distinction.
   bool get isDartFamily =>
       this == ProjectType.dart || this == ProjectType.flutter;
+
+  /// Whether this project type carries a language manifest
+  /// (pubspec.yaml or package.json).
+  ///
+  /// Only [ProjectType.none] has no manifest — such projects have no
+  /// registry, no lock file and no manifest based version.
+  bool get hasManifest => this != ProjectType.none;
 }
 
 // #############################################################################
@@ -39,8 +55,7 @@ extension ProjectTypeX on ProjectType {
 /// 1. `pubspec.yaml` with a top-level `flutter:` key → [ProjectType.flutter]
 /// 2. `pubspec.yaml` → [ProjectType.dart]
 /// 3. `package.json` + `tsconfig.json` → [ProjectType.typescript]
-///
-/// Throws an [Exception] if the directory matches none of the above.
+/// 4. otherwise → [ProjectType.none]
 ProjectType detectProjectType(Directory directory) {
   final pubspec = File('${directory.path}/pubspec.yaml');
   if (pubspec.existsSync()) {
@@ -57,11 +72,7 @@ ProjectType detectProjectType(Directory directory) {
     return ProjectType.typescript;
   }
 
-  throw Exception(
-    'Could not detect project type in "${directory.path}". '
-    'Expected pubspec.yaml (Dart/Flutter) or '
-    'package.json + tsconfig.json (TypeScript).',
-  );
+  return ProjectType.none;
 }
 
 // #############################################################################
@@ -94,9 +105,6 @@ bool isBridgeProject(Directory directory) {
 /// [detectProjectType]. Prefer this over hand-writing
 /// `isBridgeProject(d) ? ProjectType.typescript : detectProjectType(d)` so the
 /// rule lives in one place.
-///
-/// Like [detectProjectType], throws an [Exception] when [directory] matches no
-/// known project type.
 ProjectType checkProjectType(Directory directory) => isBridgeProject(directory)
     ? ProjectType.typescript
     : detectProjectType(directory);

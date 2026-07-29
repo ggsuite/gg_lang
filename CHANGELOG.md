@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Support projects without manifest: ProjectType.none, checks skipped, version tracked as git tag only
+
 ## [0.2.7] - 2026-07-29
 
 ### Changed
@@ -97,6 +103,7 @@ metadata for Dart, Flutter and TypeScript. Extracted from `gg_one` so it can
 be shared by `gg_one`, `gg_test` and `gg_publish` without circular
 dependencies.
 
+[Unreleased]: https://github.com/ggsuite/gg_lang/compare/0.2.7...HEAD
 [0.2.7]: https://github.com/ggsuite/gg_lang/compare/0.2.6...0.2.7
 [0.2.6]: https://github.com/ggsuite/gg_lang/compare/0.2.5...0.2.6
 [0.2.5]: https://github.com/ggsuite/gg_lang/compare/0.2.4...0.2.5

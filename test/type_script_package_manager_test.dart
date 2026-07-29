@@ -138,6 +138,19 @@ void main() {
       File('${tmp.path}/pnpm-lock.yaml').writeAsStringSync('');
       expect(lockFileFor(tmp), 'pnpm-lock.yaml');
     });
+
+    test('throws for a project without a manifest', () {
+      expect(
+        () => lockFileFor(tmp),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('no lock file'),
+          ),
+        ),
+      );
+    });
   });
 
   group('allLockFileNames', () {

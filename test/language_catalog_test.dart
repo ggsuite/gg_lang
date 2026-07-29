@@ -92,6 +92,19 @@ void main() {
         expect(catalog.spec(ProjectType.dart).displayName, 'Dart');
         expect(catalog.spec(ProjectType.typescript).displayName, 'TypeScript');
       });
+
+      test('throws for ProjectType.none', () {
+        expect(
+          () => catalog.spec(ProjectType.none),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('ProjectType.none'),
+            ),
+          ),
+        );
+      });
     });
 
     group('specByKey', () {
