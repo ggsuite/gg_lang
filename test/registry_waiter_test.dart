@@ -4,6 +4,7 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
+import 'package:gg_console_colors/gg_console_colors.dart';
 import 'package:gg_lang/gg_lang.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -218,6 +219,16 @@ void main() {
         );
         expect(logs[2], contains('a 1.2.4 is available on pub.dev'));
         expect(logs, hasLength(3));
+
+        // Messages are dark gray, the url blue, the success message green.
+        expect(
+          logs[0],
+          startsWith(
+            darkGray('Waiting until a 1.2.4 appears on pub.dev (up to 30m).'),
+          ),
+        );
+        expect(logs[0], contains(blue('https://pub.dev/packages/a/versions')));
+        expect(logs[2], green('a 1.2.4 is available on pub.dev.'));
       });
 
       test('timeout message contains the status url when configured', () {
