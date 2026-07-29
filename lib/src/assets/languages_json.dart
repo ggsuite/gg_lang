@@ -31,6 +31,7 @@ const String languagesJsonSource = r'''
       "registry": {
         "kind": "http",
         "url": "https://pub.dev/api/packages/{name}",
+        "statusUrl": "https://pub.dev/packages/{name}/versions",
         "latestPath": "latest.version",
         "versionsPath": "versions"
       },
@@ -75,6 +76,7 @@ const String languagesJsonSource = r'''
       "registry": {
         "kind": "http",
         "url": "https://pub.dev/api/packages/{name}",
+        "statusUrl": "https://pub.dev/packages/{name}/versions",
         "latestPath": "latest.version",
         "versionsPath": "versions"
       },
@@ -118,6 +120,7 @@ const String languagesJsonSource = r'''
       },
       "registry": {
         "kind": "cli",
+        "statusUrl": "https://www.npmjs.com/package/{name}?activeTab=versions",
         "command": "registryVersion",
         "versionsCommand": "registryVersions"
       },

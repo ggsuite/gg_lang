@@ -96,6 +96,29 @@ void main() {
       );
     });
 
+    test('throws when the request exceeds the request timeout', () async {
+      // A stalled connection must not hang the caller forever.
+      final client = MockClient((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        return http.Response('', 200);
+      });
+      final registry = PubDevRegistry(
+        spec: _httpSpec,
+        httpClient: client,
+        requestTimeout: const Duration(milliseconds: 1),
+      );
+      await expectLater(
+        registry.latestVersion(packageName: 'foo'),
+        throwsA(
+          isA<RegistryException>().having(
+            (e) => e.message,
+            'message',
+            contains('No response from'),
+          ),
+        ),
+      );
+    });
+
     test('wraps transport errors', () async {
       final client = MockClient((_) async => throw const SocketException('x'));
       final registry = PubDevRegistry(spec: _httpSpec, httpClient: client);
@@ -261,6 +284,31 @@ void main() {
       expect(
         registry.latestVersion(packageName: 'ts_pkg'),
         throwsA(isA<RegistryException>()),
+      );
+    });
+
+    test('throws when the npm lookup exceeds the request timeout', () async {
+      // npm waiting for interactive credentials must not hang the caller.
+      when(
+        () => wrapper.run(any(), any(), runInShell: any(named: 'runInShell')),
+      ).thenAnswer((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        return ProcessResult(0, 0, '["1.0.0"]\n', '');
+      });
+      final registry = NpmRegistry(
+        spec: _tsLang,
+        processWrapper: wrapper,
+        requestTimeout: const Duration(milliseconds: 1),
+      );
+      await expectLater(
+        registry.latestVersion(packageName: 'ts_pkg'),
+        throwsA(
+          isA<RegistryException>().having(
+            (e) => e.message,
+            'message',
+            contains('did not finish within'),
+          ),
+        ),
       );
     });
 

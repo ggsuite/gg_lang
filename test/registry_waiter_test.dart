@@ -126,6 +126,24 @@ void main() {
       });
     });
 
+    group('statusUrlFor', () {
+      test('resolves the {name} placeholder', () {
+        final waiter = RegistryWaiter(
+          registry: registry,
+          statusUrl: 'https://pub.dev/packages/{name}/versions',
+        );
+        expect(
+          waiter.statusUrlFor(packageName: 'gg_lang'),
+          'https://pub.dev/packages/gg_lang/versions',
+        );
+      });
+
+      test('returns null when no status url is configured', () {
+        final waiter = RegistryWaiter(registry: registry);
+        expect(waiter.statusUrlFor(packageName: 'gg_lang'), isNull);
+      });
+    });
+
     group('waitUntilVersionAvailable', () {
       test('returns once the version becomes available', () async {
         // Not available on the first poll, available on the second.
@@ -151,6 +169,121 @@ void main() {
 
         expect(calls, 2);
         expect(delays, [const Duration(seconds: 1)]);
+      });
+
+      test('logs start, progress and success messages with the url', () async {
+        // Not available on the first poll, available on the second.
+        var calls = 0;
+        when(
+          () => registry.latestVersion(packageName: any(named: 'packageName')),
+        ).thenAnswer((_) async {
+          calls++;
+          return calls < 2 ? null : Version(1, 2, 4);
+        });
+
+        // A clock advancing one minute per look so the second poll crosses
+        // the progress interval.
+        var minute = 0;
+        final logs = <String>[];
+        final waiter = RegistryWaiter(
+          registry: registry,
+          registryName: 'pub.dev',
+          statusUrl: 'https://pub.dev/packages/{name}/versions',
+          log: logs.add,
+          delay: (_) async {},
+          now: () => DateTime(2026, 1, 1, 0, minute++),
+          timeout: const Duration(minutes: 30),
+          progressInterval: const Duration(minutes: 1),
+        );
+
+        await waiter.waitUntilVersionAvailable(
+          packageName: 'a',
+          version: '1.2.4',
+        );
+
+        expect(
+          logs[0],
+          allOf(
+            contains('Waiting until a 1.2.4 appears on pub.dev'),
+            contains('https://pub.dev/packages/a/versions'),
+          ),
+        );
+        expect(
+          logs[1],
+          allOf(
+            contains('Still waiting for a 1.2.4 on pub.dev'),
+            contains('elapsed'),
+            contains('https://pub.dev/packages/a/versions'),
+          ),
+        );
+        expect(logs[2], contains('a 1.2.4 is available on pub.dev'));
+        expect(logs, hasLength(3));
+      });
+
+      test('timeout message contains the status url when configured', () {
+        mockLatest(null); // never available
+
+        final times = <DateTime>[
+          DateTime(2026),
+          DateTime(2026),
+          DateTime(2027),
+        ];
+        var i = 0;
+
+        final waiter = RegistryWaiter(
+          registry: registry,
+          registryName: 'npm',
+          statusUrl: 'https://www.npmjs.com/package/{name}',
+          delay: (_) async {},
+          now: () => times[i < times.length - 1 ? i++ : i],
+          timeout: const Duration(minutes: 2),
+        );
+
+        expect(
+          () => waiter.waitUntilVersionAvailable(
+            packageName: '@scope/a',
+            version: '1.0.0',
+          ),
+          throwsA(
+            isA<Exception>().having(
+              (e) => e.toString(),
+              'message',
+              allOf(
+                contains('Timed out'),
+                contains('https://www.npmjs.com/package/%40scope%2Fa'),
+              ),
+            ),
+          ),
+        );
+      });
+
+      test('formats the timeout compactly in the start message', () async {
+        mockLatest(Version(9, 9, 9)); // available immediately
+
+        Future<String> startMessage(Duration timeout) async {
+          final logs = <String>[];
+          final waiter = RegistryWaiter(
+            registry: registry,
+            log: logs.add,
+            delay: (_) async {},
+            timeout: timeout,
+          );
+          await waiter.waitUntilVersionAvailable(
+            packageName: 'a',
+            version: '1.0.0',
+          );
+          return logs.first;
+        }
+
+        expect(
+          await startMessage(const Duration(seconds: 45)),
+          contains('45s'),
+        );
+        expect(
+          await startMessage(const Duration(seconds: 90)),
+          contains('1m 30s'),
+        );
+        expect(await startMessage(const Duration(minutes: 2)), contains('2m'));
       });
 
       test('throws when the timeout elapses', () async {

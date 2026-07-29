@@ -4,7 +4,9 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:gg_lang/src/language_catalog.dart';
 import 'package:gg_lang/src/project_type.dart';
@@ -49,12 +51,19 @@ abstract class Registry {
 /// pub.dev implementation (Dart/Flutter) using the HTTP JSON API.
 class PubDevRegistry extends Registry {
   /// Constructor.
-  PubDevRegistry({required RegistrySpec spec, http.Client? httpClient})
-    : _spec = spec,
-      _httpClient = httpClient;
+  PubDevRegistry({
+    required RegistrySpec spec,
+    http.Client? httpClient,
+    this.requestTimeout = const Duration(seconds: 30),
+  }) : _spec = spec,
+       _httpClient = httpClient;
 
   final RegistrySpec _spec;
   final http.Client? _httpClient;
+
+  /// Maximum time a single registry request may take. A stalled connection
+  /// is surfaced as a [RegistryException] instead of hanging forever.
+  final Duration requestTimeout;
 
   @override
   Future<Version?> latestVersion({required String packageName}) async {
@@ -109,7 +118,11 @@ class PubDevRegistry extends Registry {
 
     late http.Response response;
     try {
-      response = await client.get(Uri.parse(url));
+      response = await client.get(Uri.parse(url)).timeout(requestTimeout);
+    } on TimeoutException {
+      throw RegistryException(
+        'No response from $url within ${requestTimeout.inSeconds} seconds.',
+      );
     } catch (e) {
       throw RegistryException('Error querying $url: $e');
     } finally {
@@ -152,6 +165,7 @@ class NpmRegistry extends Registry {
     required LanguageSpec spec,
     GgProcessWrapper processWrapper = const GgProcessWrapper(),
     String? workingDirectory,
+    this.requestTimeout = const Duration(seconds: 60),
   }) : _spec = spec,
        _processWrapper = processWrapper,
        _workingDirectory = workingDirectory;
@@ -159,6 +173,11 @@ class NpmRegistry extends Registry {
   final LanguageSpec _spec;
   final GgProcessWrapper _processWrapper;
   final String? _workingDirectory;
+
+  /// Maximum time a single `npm view` lookup may take. A hanging lookup
+  /// (e.g. npm waiting for interactive credentials) is surfaced as a
+  /// [RegistryException] instead of blocking forever.
+  final Duration requestTimeout;
 
   @override
   Future<Version?> latestVersion({required String packageName}) async {
@@ -206,12 +225,22 @@ class NpmRegistry extends Registry {
     final command = _spec.command(commandKey).withValues({'name': packageName});
 
     final executable = command.exec ?? command.tool!;
-    final result = await _processWrapper.run(
-      executable,
-      command.args,
-      runInShell: command.runInShell,
-      workingDirectory: _workingDirectory,
-    );
+    late ProcessResult result;
+    try {
+      result = await _processWrapper
+          .run(
+            executable,
+            command.args,
+            runInShell: command.runInShell,
+            workingDirectory: _workingDirectory,
+          )
+          .timeout(requestTimeout);
+    } on TimeoutException {
+      throw RegistryException(
+        '»$executable ${command.args.join(' ')}« did not finish within '
+        '${requestTimeout.inSeconds} seconds.',
+      );
+    }
 
     final stdout = (result.stdout as String).trim();
     final stderr = (result.stderr as String);

@@ -26,6 +26,7 @@ const _json = '''
       "registry": {
         "kind": "http",
         "url": "https://pub.dev/api/packages/{name}",
+        "statusUrl": "https://pub.dev/packages/{name}/versions",
         "latestPath": "latest.version",
         "versionsPath": "versions"
       },
@@ -136,6 +137,7 @@ void main() {
         final registry = catalog.specByKey('dart').registry;
         expect(registry?.kind, 'http');
         expect(registry?.url, 'https://pub.dev/api/packages/{name}');
+        expect(registry?.statusUrl, 'https://pub.dev/packages/{name}/versions');
         expect(registry?.latestPath, 'latest.version');
         expect(registry?.versionsPath, 'versions');
         expect(registry?.command, isNull);
@@ -149,6 +151,32 @@ void main() {
         expect(registry?.versionsCommand, 'registryVersions');
         expect(registry?.url, isNull);
         expect(registry?.versionsPath, isNull);
+      });
+
+      group('statusUrlFor', () {
+        test('resolves the {name} placeholder', () {
+          final registry = catalog.specByKey('dart').registry;
+          expect(
+            registry?.statusUrlFor('gg_lang'),
+            'https://pub.dev/packages/gg_lang/versions',
+          );
+        });
+
+        test('url-encodes the package name', () {
+          const spec = RegistrySpec(
+            kind: 'cli',
+            statusUrl: 'https://www.npmjs.com/package/{name}',
+          );
+          expect(
+            spec.statusUrlFor('@scope/pkg'),
+            'https://www.npmjs.com/package/%40scope%2Fpkg',
+          );
+        });
+
+        test('returns null when no status url is configured', () {
+          final registry = catalog.specByKey('typescript').registry;
+          expect(registry?.statusUrlFor('pkg'), isNull);
+        });
       });
     });
 
