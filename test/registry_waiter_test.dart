@@ -15,6 +15,7 @@ void main() {
 
   setUp(() {
     registry = MockRegistry();
+    RegistryWaiter.resetAnnouncements();
   });
 
   void mockLatest(Version? version) {
@@ -268,10 +269,105 @@ void main() {
         );
       });
 
-      test('formats the timeout compactly in the start message', () async {
-        mockLatest(Version(9, 9, 9)); // available immediately
+      test('logs nothing when the version is already available', () async {
+        mockLatest(Version(9, 9, 9)); // available on the first look
 
+        final logs = <String>[];
+        final delays = <Duration>[];
+        final waiter = RegistryWaiter(
+          registry: registry,
+          registryName: 'pub.dev',
+          statusUrl: 'https://pub.dev/packages/{name}/versions',
+          log: logs.add,
+          delay: (d) async => delays.add(d),
+        );
+
+        await waiter.waitUntilVersionAvailable(
+          packageName: 'a',
+          version: '1.0.0',
+        );
+
+        // Announcing a wait that does not happen would repeat the message —
+        // the publish flow checks the same version from several places.
+        expect(logs, isEmpty);
+        expect(delays, isEmpty);
+      });
+
+      group('announces the wait only once per version and process', () {
+        // Each waiter is not available on its first look, so without the
+        // guard both would announce. The publish flow hits this whenever a
+        // stale registry response or a transient lookup error makes an
+        // already published version look unpublished again.
+        Future<List<String>> waitTwice({
+          String secondVersion = '1.2.4',
+          String secondRegistryName = 'pub.dev',
+        }) async {
+          final logs = <String>[];
+
+          Future<void> wait(String version, String registryName) async {
+            var calls = 0;
+            when(
+              () => registry.latestVersion(
+                packageName: any(named: 'packageName'),
+              ),
+            ).thenAnswer((_) async {
+              calls++;
+              return calls < 2 ? null : Version.parse(version);
+            });
+
+            // A fresh waiter per call — the publish flow builds one per wait.
+            await RegistryWaiter(
+              registry: registry,
+              registryName: registryName,
+              log: logs.add,
+              delay: (_) async {},
+            ).waitUntilVersionAvailable(packageName: 'a', version: version);
+          }
+
+          await wait('1.2.4', 'pub.dev');
+          await wait(secondVersion, secondRegistryName);
+
+          return logs;
+        }
+
+        test('so the second wait for the same version stays quiet', () async {
+          final logs = await waitTwice();
+
+          expect(logs.where((l) => l.contains('Waiting until')), hasLength(1));
+          // The second wait really polls, so its outcome is still reported.
+          expect(
+            logs.where((l) => l.contains('is available on pub.dev')),
+            hasLength(2),
+          );
+        });
+
+        test('but another version announces itself', () async {
+          final logs = await waitTwice(secondVersion: '1.2.5');
+          expect(logs.where((l) => l.contains('Waiting until')), hasLength(2));
+        });
+
+        test('and so does another registry', () async {
+          final logs = await waitTwice(secondRegistryName: 'npm');
+          expect(logs.where((l) => l.contains('Waiting until')), hasLength(2));
+        });
+      });
+
+      test('formats the timeout compactly in the start message', () async {
         Future<String> startMessage(Duration timeout) async {
+          // Every call waits for the same version, so the once-per-version
+          // guard has to be cleared to get a start message each time.
+          RegistryWaiter.resetAnnouncements();
+
+          // Not available on the first look, so the wait is announced.
+          var calls = 0;
+          when(
+            () =>
+                registry.latestVersion(packageName: any(named: 'packageName')),
+          ).thenAnswer((_) async {
+            calls++;
+            return calls < 2 ? null : Version(9, 9, 9);
+          });
+
           final logs = <String>[];
           final waiter = RegistryWaiter(
             registry: registry,

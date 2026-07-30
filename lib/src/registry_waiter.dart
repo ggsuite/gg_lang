@@ -22,6 +22,9 @@ import 'package:pub_semver/pub_semver.dart';
 /// While waiting, progress is reported through [log]: a start message with
 /// the human-facing status page (see [statusUrl]), a periodic "still
 /// waiting" message every [progressInterval], and a final success message.
+/// The start message appears at most once per version and process, and not
+/// at all when there is nothing to wait for — see
+/// [waitUntilVersionAvailable].
 /// The wait never hangs: every poll is bounded by the registry's own request
 /// timeout, and the wait as a whole is bounded by [timeout].
 class RegistryWaiter {
@@ -98,10 +101,26 @@ class RegistryWaiter {
   /// Waits until [version] of [packageName] becomes visible, or throws when
   /// [timeout] elapses. The timeout message contains the status page url
   /// (when configured), so the user can check the registry manually.
+  ///
+  /// The wait is announced at most once per version and process: the publish
+  /// flow waits for the same version from more than one place (the repo
+  /// publishing it, later repos depending on it), and each place builds its
+  /// own waiter. A version that is already visible returns without logging
+  /// anything at all — there is no wait to report. Progress, success and
+  /// timeout messages are not suppressed: a second wait that really has to
+  /// poll still reports what it does.
   Future<void> waitUntilVersionAvailable({
     required String packageName,
     required String version,
   }) async {
+    final availableAlready = await isVersionAvailable(
+      packageName: packageName,
+      version: version,
+    );
+    if (availableAlready) {
+      return;
+    }
+
     final start = _now();
     final deadline = start.add(timeout);
     final url = statusUrlFor(packageName: packageName);
@@ -111,27 +130,21 @@ class RegistryWaiter {
         ? ''
         : '\n${darkGray('Check the status here:')} ${blue(url)}';
 
-    _log?.call(
-      darkGray(
-            'Waiting until $packageName $version appears on $registryName '
-            '(up to ${_format(timeout)}).',
-          ) +
-          urlHint,
-    );
+    // add() is false once the same version was announced before — a stale
+    // registry response or a transient lookup error must not repeat the
+    // announcement.
+    if (_announced.add('$registryName/$packageName@$version')) {
+      _log?.call(
+        darkGray(
+              'Waiting until $packageName $version appears on $registryName '
+              '(up to ${_format(timeout)}).',
+            ) +
+            urlHint,
+      );
+    }
 
     var lastProgress = start;
     while (true) {
-      final available = await isVersionAvailable(
-        packageName: packageName,
-        version: version,
-      );
-      if (available) {
-        _log?.call(
-          green('$packageName $version is available on $registryName.'),
-        );
-        return;
-      }
-
       final now = _now();
       if (now.isAfter(deadline)) {
         throw Exception(
@@ -153,8 +166,31 @@ class RegistryWaiter {
       }
 
       await _delay(pollInterval);
+
+      final available = await isVersionAvailable(
+        packageName: packageName,
+        version: version,
+      );
+      if (available) {
+        _log?.call(
+          green('$packageName $version is available on $registryName.'),
+        );
+        return;
+      }
     }
   }
+
+  // ...........................................................................
+  /// The `registry/package@version` keys announced in this process.
+  ///
+  /// Deliberately static: the publish flow waits for the same version from
+  /// several places and each place creates its own [RegistryWaiter], so an
+  /// instance field could not tell a repeated announcement from a first one.
+  static final Set<String> _announced = <String>{};
+
+  /// Forgets which versions have been announced, so the next wait announces
+  /// itself again. Intended for tests — call it in `setUp`.
+  static void resetAnnouncements() => _announced.clear();
 
   // ...........................................................................
   /// Reads the latest version, treating transient registry errors as
