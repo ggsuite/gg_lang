@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 - 2026-07-31
+
+### Changed
+
+- Print »waiting until ... appears on pub.dev only one time
+- Merge main
+
 ## 0.3.1 - 2026-07-30
 
 ### Added

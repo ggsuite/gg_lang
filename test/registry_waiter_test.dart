@@ -173,18 +173,19 @@ void main() {
         expect(delays, [const Duration(seconds: 1)]);
       });
 
-      test('logs start, progress and success messages with the url', () async {
-        // Not available on the first poll, available on the second.
+      test('logs only a start and a success message with the url', () async {
+        // Unavailable for the first four polls, so a wait long enough for a
+        // periodic progress message to have appeared is really covered.
         var calls = 0;
         when(
           () => registry.latestVersion(packageName: any(named: 'packageName')),
         ).thenAnswer((_) async {
           calls++;
-          return calls < 2 ? null : Version(1, 2, 4);
+          return calls < 5 ? null : Version(1, 2, 4);
         });
 
-        // A clock advancing one minute per look so the second poll crosses
-        // the progress interval.
+        // A clock advancing one minute per look, so every poll would cross a
+        // one-minute progress interval.
         var minute = 0;
         final logs = <String>[];
         final waiter = RegistryWaiter(
@@ -195,7 +196,6 @@ void main() {
           delay: (_) async {},
           now: () => DateTime(2026, 1, 1, 0, minute++),
           timeout: const Duration(minutes: 30),
-          progressInterval: const Duration(minutes: 1),
         );
 
         await waiter.waitUntilVersionAvailable(
@@ -206,30 +206,26 @@ void main() {
         expect(
           logs[0],
           allOf(
-            contains('Waiting until a 1.2.4 appears on pub.dev'),
+            contains('Waiting 2-10min until a 1.2.4 appears on pub.dev'),
             contains('https://pub.dev/packages/a/versions'),
           ),
         );
-        expect(
-          logs[1],
-          allOf(
-            contains('Still waiting for a 1.2.4 on pub.dev'),
-            contains('elapsed'),
-            contains('https://pub.dev/packages/a/versions'),
-          ),
-        );
-        expect(logs[2], contains('a 1.2.4 is available on pub.dev'));
-        expect(logs, hasLength(3));
+        expect(logs[1], contains('a 1.2.4 is available on pub.dev'));
+
+        // Nothing is printed while polling: the start message must not be
+        // pushed out of view by a message that says nothing new.
+        expect(logs, hasLength(2));
+        expect(logs.where((l) => l.contains('Still waiting')), isEmpty);
 
         // Messages are dark gray, the url blue, the success message green.
         expect(
           logs[0],
           startsWith(
-            darkGray('Waiting until a 1.2.4 appears on pub.dev (up to 30m).'),
+            darkGray('Waiting 2-10min until a 1.2.4 appears on pub.dev.'),
           ),
         );
         expect(logs[0], contains(blue('https://pub.dev/packages/a/versions')));
-        expect(logs[2], green('a 1.2.4 is available on pub.dev.'));
+        expect(logs[1], green('a 1.2.4 is available on pub.dev.'));
       });
 
       test('timeout message contains the status url when configured', () {
@@ -333,7 +329,10 @@ void main() {
         test('so the second wait for the same version stays quiet', () async {
           final logs = await waitTwice();
 
-          expect(logs.where((l) => l.contains('Waiting until')), hasLength(1));
+          expect(
+            logs.where((l) => l.contains('Waiting 2-10min until')),
+            hasLength(1),
+          );
           // The second wait really polls, so its outcome is still reported.
           expect(
             logs.where((l) => l.contains('is available on pub.dev')),
@@ -343,54 +342,19 @@ void main() {
 
         test('but another version announces itself', () async {
           final logs = await waitTwice(secondVersion: '1.2.5');
-          expect(logs.where((l) => l.contains('Waiting until')), hasLength(2));
+          expect(
+            logs.where((l) => l.contains('Waiting 2-10min until')),
+            hasLength(2),
+          );
         });
 
         test('and so does another registry', () async {
           final logs = await waitTwice(secondRegistryName: 'npm');
-          expect(logs.where((l) => l.contains('Waiting until')), hasLength(2));
+          expect(
+            logs.where((l) => l.contains('Waiting 2-10min until')),
+            hasLength(2),
+          );
         });
-      });
-
-      test('formats the timeout compactly in the start message', () async {
-        Future<String> startMessage(Duration timeout) async {
-          // Every call waits for the same version, so the once-per-version
-          // guard has to be cleared to get a start message each time.
-          RegistryWaiter.resetAnnouncements();
-
-          // Not available on the first look, so the wait is announced.
-          var calls = 0;
-          when(
-            () =>
-                registry.latestVersion(packageName: any(named: 'packageName')),
-          ).thenAnswer((_) async {
-            calls++;
-            return calls < 2 ? null : Version(9, 9, 9);
-          });
-
-          final logs = <String>[];
-          final waiter = RegistryWaiter(
-            registry: registry,
-            log: logs.add,
-            delay: (_) async {},
-            timeout: timeout,
-          );
-          await waiter.waitUntilVersionAvailable(
-            packageName: 'a',
-            version: '1.0.0',
-          );
-          return logs.first;
-        }
-
-        expect(
-          await startMessage(const Duration(seconds: 45)),
-          contains('45s'),
-        );
-        expect(
-          await startMessage(const Duration(seconds: 90)),
-          contains('1m 30s'),
-        );
-        expect(await startMessage(const Duration(minutes: 2)), contains('2m'));
       });
 
       test('throws when the timeout elapses', () async {

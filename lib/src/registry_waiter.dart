@@ -19,11 +19,12 @@ import 'package:pub_semver/pub_semver.dart';
 /// status or a flaky network) are treated as "not yet available" so they do
 /// not abort an in-progress wait.
 ///
-/// While waiting, progress is reported through [log]: a start message with
-/// the human-facing status page (see [statusUrl]), a periodic "still
-/// waiting" message every [progressInterval], and a final success message.
-/// The start message appears at most once per version and process, and not
-/// at all when there is nothing to wait for — see
+/// A wait is reported through [log] with exactly two messages: a start
+/// message with the human-facing status page (see [statusUrl]) and a final
+/// success message. Nothing is printed while polling — a message repeated
+/// every minute only pushes the start message out of view without saying
+/// anything new. The start message appears at most once per version and
+/// process, and not at all when there is nothing to wait for — see
 /// [waitUntilVersionAvailable].
 /// The wait never hangs: every poll is bounded by the registry's own request
 /// timeout, and the wait as a whole is bounded by [timeout].
@@ -39,7 +40,6 @@ class RegistryWaiter {
     DateTime Function()? now,
     this.pollInterval = const Duration(seconds: 5),
     this.timeout = const Duration(minutes: 2),
-    this.progressInterval = const Duration(minutes: 1),
   }) : _registry = registry,
        _log = log,
        _delay = delay ?? Future<void>.delayed,
@@ -64,9 +64,6 @@ class RegistryWaiter {
 
   /// Maximum time to wait for a version to appear.
   final Duration timeout;
-
-  /// Interval between "still waiting" progress messages.
-  final Duration progressInterval;
 
   /// Returns [statusUrl] with the `{name}` placeholder resolved to
   /// [packageName], or null when no status url is configured.
@@ -106,9 +103,9 @@ class RegistryWaiter {
   /// flow waits for the same version from more than one place (the repo
   /// publishing it, later repos depending on it), and each place builds its
   /// own waiter. A version that is already visible returns without logging
-  /// anything at all — there is no wait to report. Progress, success and
-  /// timeout messages are not suppressed: a second wait that really has to
-  /// poll still reports what it does.
+  /// anything at all — there is no wait to report. Success and timeout
+  /// messages are not suppressed: a second wait that really has to poll
+  /// still reports how it ended.
   Future<void> waitUntilVersionAvailable({
     required String packageName,
     required String version,
@@ -121,8 +118,7 @@ class RegistryWaiter {
       return;
     }
 
-    final start = _now();
-    final deadline = start.add(timeout);
+    final deadline = _now().add(timeout);
     final url = statusUrlFor(packageName: packageName);
 
     // Status messages are printed dark gray, the status url blue.
@@ -136,32 +132,19 @@ class RegistryWaiter {
     if (_announced.add('$registryName/$packageName@$version')) {
       _log?.call(
         darkGray(
-              'Waiting until $packageName $version appears on $registryName '
-              '(up to ${_format(timeout)}).',
+              'Waiting 2-10min until $packageName $version appears on '
+              '$registryName.',
             ) +
             urlHint,
       );
     }
 
-    var lastProgress = start;
     while (true) {
-      final now = _now();
-      if (now.isAfter(deadline)) {
+      if (_now().isAfter(deadline)) {
         throw Exception(
           'Timed out waiting for $packageName $version to become '
           'available on $registryName after ${timeout.inSeconds} '
           'seconds.${url == null ? '' : '\nCheck the status here: $url'}',
-        );
-      }
-
-      if (now.difference(lastProgress) >= progressInterval) {
-        lastProgress = now;
-        _log?.call(
-          darkGray(
-                'Still waiting for $packageName $version on $registryName '
-                '(${_format(now.difference(start))} elapsed).',
-              ) +
-              urlHint,
         );
       }
 
@@ -212,16 +195,6 @@ class RegistryWaiter {
     } on RegistryException {
       return [];
     }
-  }
-
-  // ...........................................................................
-  /// Formats [duration] as a compact human-readable string (`45s`, `2m 30s`).
-  static String _format(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    if (minutes == 0) return '${seconds}s';
-    if (seconds == 0) return '${minutes}m';
-    return '${minutes}m ${seconds}s';
   }
 }
 
