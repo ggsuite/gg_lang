@@ -225,7 +225,7 @@ void main() {
           ),
         );
         expect(logs[0], contains(blue('https://pub.dev/packages/a/versions')));
-        expect(logs[1], green('a 1.2.4 is available on pub.dev.'));
+        expect(logs[1], cDetail('a 1.2.4 is available on pub.dev.'));
       });
 
       test('timeout message contains the status url when configured', () {

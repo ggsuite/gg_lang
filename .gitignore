@@ -10,5 +10,6 @@ coverage/
 # ».gg/« rule must not be used: git never descends into an excluded
 # directory, so the »!«-negation below would have no effect.
 .gg/*
-!.gg/.gg.json
+!.gg/gg.json
 .gg/.gg-publish.json
+.gg/gg-publish.json
