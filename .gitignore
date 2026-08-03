@@ -12,3 +12,4 @@ coverage/
 .gg/*
 !.gg/gg.json
 .gg/.gg-publish.json
+.gg/gg-publish.json
