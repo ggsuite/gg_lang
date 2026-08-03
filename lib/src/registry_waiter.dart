@@ -156,7 +156,7 @@ class RegistryWaiter {
       );
       if (available) {
         _log?.call(
-          green('$packageName $version is available on $registryName.'),
+          cDetail('$packageName $version is available on $registryName.'),
         );
         return;
       }
