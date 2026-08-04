@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 - 2026-08-04
+
+### Changed
+
+- Rename .master to .ocean with automatic migration at next start
+
 ## 0.3.3 - 2026-08-04
 
 ### Changed
