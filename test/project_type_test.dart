@@ -99,42 +99,84 @@ void main() {
     });
   });
 
-  group('isBridgeProject', () {
-    test('is true when pubspec.yaml, package.json and tsconfig coexist', () {
+  group('isHybridProject', () {
+    test('is true when pubspec.yaml and package.json coexist', () {
       File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
       File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
-      File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
-      expect(isBridgeProject(tmp), isTrue);
+      expect(isHybridProject(tmp), isTrue);
       // detectProjectType still reports dart (pubspec precedence).
       expect(detectProjectType(tmp), ProjectType.dart);
     });
 
+    test('a tsconfig.json is not required', () {
+      // A Dart package that additionally publishes its payload as an npm
+      // tarball carries no TypeScript sources — but it still has two
+      // manifests, two registries and two versions to keep in lock-step.
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      expect(File('${tmp.path}/tsconfig.json').existsSync(), isFalse);
+      expect(isHybridProject(tmp), isTrue);
+    });
+
+    test('a tsconfig.json does not hurt either', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
+      expect(isHybridProject(tmp), isTrue);
+    });
+
     test('is false for a pure Dart package', () {
       File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
-      expect(isBridgeProject(tmp), isFalse);
+      expect(isHybridProject(tmp), isFalse);
     });
 
     test('is false for a pure TypeScript project', () {
       File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
       File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
-      expect(isBridgeProject(tmp), isFalse);
+      expect(isHybridProject(tmp), isFalse);
     });
 
-    test('is false when tsconfig.json is missing', () {
+    test('is false for an empty directory', () {
+      expect(isHybridProject(tmp), isFalse);
+    });
+  });
+
+  group('isBridgeProject', () {
+    test('is the former name of isHybridProject, with the widened rule', () {
       File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
       File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
-      expect(isBridgeProject(tmp), isFalse);
+      // No tsconfig.json — which the old rule required.
+      expect(isBridgeProject(tmp), isHybridProject(tmp));
+      expect(isBridgeProject(tmp), isTrue);
     });
   });
 
   group('checkProjectType', () {
-    test('resolves a bridge repo to typescript (not dart)', () {
+    test('resolves a hybrid repo to typescript (not dart)', () {
       File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
       File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
       File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
       // detectProjectType would say dart (pubspec precedence); the check
-      // pipeline treats bridges as typescript.
+      // pipeline treats hybrids as typescript.
       expect(detectProjectType(tmp), ProjectType.dart);
+      expect(checkProjectType(tmp), ProjectType.typescript);
+    });
+
+    test('resolves a hybrid without tsconfig.json to typescript too', () {
+      // This is the case that used to fall through to dart, so the npm side
+      // of such a repo was never checked, versioned or published by gg.
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      expect(detectProjectType(tmp), ProjectType.dart);
+      expect(checkProjectType(tmp), ProjectType.typescript);
+    });
+
+    test('a Flutter hybrid is checked as typescript as well', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync(
+        'name: foo\nflutter:\n  uses-material-design: true\n',
+      );
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      expect(detectProjectType(tmp), ProjectType.flutter);
       expect(checkProjectType(tmp), ProjectType.typescript);
     });
 
