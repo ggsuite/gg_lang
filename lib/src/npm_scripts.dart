@@ -45,6 +45,42 @@ bool hasNpmScript(Directory directory, String name) =>
     readNpmScripts(directory).containsKey(name);
 
 // .............................................................................
+/// The names of every dependency the `package.json` in [directory] declares —
+/// `dependencies`, `devDependencies`, `peerDependencies` and
+/// `optionalDependencies`.
+///
+/// Returns an empty set when there is no `package.json`, it cannot be parsed,
+/// or it is not a JSON object. Callers use this to act only on packages a
+/// repository really has: installing one it never declared would add it.
+Set<String> readNpmDependencyNames(Directory directory) {
+  final file = File('${directory.path}/package.json');
+  if (!file.existsSync()) {
+    return const {};
+  }
+  try {
+    final decoded = jsonDecode(file.readAsStringSync());
+    if (decoded is! Map<String, dynamic>) {
+      return const {};
+    }
+    final result = <String>{};
+    for (final section in const <String>[
+      'dependencies',
+      'devDependencies',
+      'peerDependencies',
+      'optionalDependencies',
+    ]) {
+      final entries = decoded[section];
+      if (entries is Map) {
+        result.addAll(entries.keys.map((key) => key.toString()));
+      }
+    }
+    return result;
+  } catch (_) {
+    return const {};
+  }
+}
+
+// .............................................................................
 /// Whether the `package.json` in [directory] sets `"private": true`.
 ///
 /// npm and pnpm refuse to publish a package marked private, so gg's

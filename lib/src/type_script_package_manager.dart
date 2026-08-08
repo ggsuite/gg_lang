@@ -74,6 +74,71 @@ enum TypeScriptPackageManager {
     return (executable: executable, args: ['run', script]);
   }
 
+  /// Builds the argv to upgrade the project's dependencies.
+  ///
+  /// - pnpm → `pnpm update [--latest]`
+  /// - yarn → `yarn upgrade [--latest]`
+  /// - npm  → `npm update` — npm has no cross-major update, so [latest] makes
+  ///   no difference there
+  ///
+  /// [latest] crosses major versions, mirroring `dart pub upgrade
+  /// --major-versions`.
+  ///
+  /// `--no-save` is deliberately *not* passed. It would keep `package.json`
+  /// untouched, but a `--latest` that cannot widen the declared range leaves
+  /// the lock file resolving outside it, and the next
+  /// `pnpm install --frozen-lockfile` in CI fails with
+  /// `ERR_PNPM_OUTDATED_LOCKFILE`.
+  ({String executable, List<String> args}) updateCommand({
+    required bool latest,
+  }) => switch (this) {
+    TypeScriptPackageManager.pnpm => (
+      executable: 'pnpm',
+      args: <String>['update', if (latest) '--latest'],
+    ),
+    TypeScriptPackageManager.yarn => (
+      executable: 'yarn',
+      args: <String>['upgrade', if (latest) '--latest'],
+    ),
+    TypeScriptPackageManager.npm => (
+      executable: 'npm',
+      args: const <String>['update'],
+    ),
+  };
+
+  /// Builds the argv to hold [package] at [version].
+  ///
+  /// - pnpm → `pnpm update --save-exact <package>@<version>`
+  /// - yarn → `yarn upgrade --exact <package>@<version>`
+  /// - npm  → `npm install --save-exact <package>@<version>`
+  ///
+  /// pnpm gets **no** `--latest`: combined with an explicit spec it refuses
+  /// with `ERR_PNPM_LATEST_WITH_SPEC`. Without it, `pnpm update <pkg>@<spec>`
+  /// moves the package into the named line in either direction — verified
+  /// taking a declared `~7.0.2` down to `6.0.3`.
+  ///
+  /// `--save-exact` only decides how the *manifest* is rewritten when the
+  /// declared spec carries no range operator; pnpm keeps an existing `^`/`~`
+  /// and just retargets it (`^7.0.2` → `^6.0.3`). Either way the package stays
+  /// inside the pinned major, and the pin re-runs on every upgrade.
+  ({String executable, List<String> args}) pinCommand({
+    required String package,
+    required String version,
+  }) => switch (this) {
+    TypeScriptPackageManager.pnpm => (
+      executable: 'pnpm',
+      args: <String>['update', '--save-exact', '$package@$version'],
+    ),
+    TypeScriptPackageManager.yarn => (
+      executable: 'yarn',
+      args: <String>['upgrade', '--exact', '$package@$version'],
+    ),
+    TypeScriptPackageManager.npm => (
+      executable: 'npm',
+      args: <String>['install', '--save-exact', '$package@$version'],
+    ),
+  };
+
   /// Builds the argv to publish the package with this package manager.
   ///
   /// - pnpm → `pnpm publish --no-git-checks` — gg manages git itself and
@@ -90,6 +155,22 @@ enum TypeScriptPackageManager {
     TypeScriptPackageManager.npm => (executable: 'npm', args: ['publish']),
   };
 }
+
+// #############################################################################
+
+/// npm packages gg holds at a fixed version instead of letting an upgrade
+/// carry them along.
+///
+/// `pnpm update --latest` crosses every major boundary. TypeScript 7 is a
+/// breaking rewrite the toolchain around it is not ready for, so the node
+/// upgrade runs the generic update first and then pins these packages — which
+/// also brings a repository that already drifted past the pin back down.
+///
+/// Only packages a repository actually **declares** are pinned. Installing one
+/// it never declared would add it as a new dependency.
+const Map<String, String> pinnedNpmVersions = <String, String>{
+  'typescript': '6',
+};
 
 // #############################################################################
 
