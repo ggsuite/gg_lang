@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `isHybridProject` — the predicate under its new name. `isBridgeProject`
+keeps working as an alias but now carries the widened meaning; "bridge"
+suggested a repo bridging two languages, while the rule is really about a
+repo carrying two manifests.
+
+### Changed
+
+- A hybrid repository — one carrying both a `pubspec.yaml` and a
+`package.json` — is recognized as such without a `tsconfig.json`, and
+`checkProjectType` resolves it to `ProjectType.typescript`. Before, the
+detection additionally required a `tsconfig.json`, so a Dart package that
+publishes its payload as an npm tarball fell through to
+`ProjectType.dart`: gg ran only the Dart pipeline on it, never the npm
+scripts, never wrote its `package.json` version, and never published it to
+npm.
+- Allow to publish pnpm packages without typescript.
+
 ## 0.4.0 - 2026-08-04
 
 ### Changed
