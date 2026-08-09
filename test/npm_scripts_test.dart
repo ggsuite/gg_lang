@@ -113,4 +113,41 @@ void main() {
       expect(isPrivateNpmPackage(tmp), isFalse);
     });
   });
+
+  // ###########################################################################
+  group('readNpmDependencyNames(directory)', () {
+    test('collects every dependency section', () {
+      File('${tmp.path}/package.json').writeAsStringSync('''
+{
+  "name": "x",
+  "dependencies": {"a": "^1.0.0"},
+  "devDependencies": {"typescript": "~7.0.2"},
+  "peerDependencies": {"b": "^2.0.0"},
+  "optionalDependencies": {"c": "^3.0.0"}
+}
+''');
+      expect(readNpmDependencyNames(tmp), {'a', 'typescript', 'b', 'c'});
+    });
+
+    test('is empty without a package.json', () {
+      expect(readNpmDependencyNames(tmp), isEmpty);
+    });
+
+    test('is empty for an unparsable package.json', () {
+      File('${tmp.path}/package.json').writeAsStringSync('{ "name": ');
+      expect(readNpmDependencyNames(tmp), isEmpty);
+    });
+
+    test('is empty when package.json is not an object', () {
+      File('${tmp.path}/package.json').writeAsStringSync('[1, 2]');
+      expect(readNpmDependencyNames(tmp), isEmpty);
+    });
+
+    test('ignores a section that is not a map', () {
+      File(
+        '${tmp.path}/package.json',
+      ).writeAsStringSync('{"name": "x", "dependencies": "nope"}');
+      expect(readNpmDependencyNames(tmp), isEmpty);
+    });
+  });
 }
