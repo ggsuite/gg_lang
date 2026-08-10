@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Provide gg via npm
+
 ## 0.5.0 - 2026-08-09
 
 ### Added
