@@ -116,6 +116,80 @@ void main() {
     });
   });
 
+  group('TypeScriptPackageManager.updateCommand(latest)', () {
+    test('pnpm upgrades with "pnpm update"', () {
+      final cmd = TypeScriptPackageManager.pnpm.updateCommand(latest: false);
+      expect(cmd.executable, 'pnpm');
+      expect(cmd.args, ['update']);
+    });
+
+    test('pnpm crosses majors with --latest', () {
+      final cmd = TypeScriptPackageManager.pnpm.updateCommand(latest: true);
+      expect(cmd.executable, 'pnpm');
+      expect(cmd.args, ['update', '--latest']);
+    });
+
+    test('yarn upgrades with "yarn upgrade"', () {
+      final cmd = TypeScriptPackageManager.yarn.updateCommand(latest: false);
+      expect(cmd.executable, 'yarn');
+      expect(cmd.args, ['upgrade']);
+    });
+
+    test('yarn crosses majors with --latest', () {
+      final cmd = TypeScriptPackageManager.yarn.updateCommand(latest: true);
+      expect(cmd.executable, 'yarn');
+      expect(cmd.args, ['upgrade', '--latest']);
+    });
+
+    for (final latest in [true, false]) {
+      test('npm uses "npm update" with latest = $latest', () {
+        // npm has no cross-major update, so the flag makes no difference.
+        final cmd = TypeScriptPackageManager.npm.updateCommand(latest: latest);
+        expect(cmd.executable, 'npm');
+        expect(cmd.args, ['update']);
+      });
+    }
+  });
+
+  group('TypeScriptPackageManager.pinCommand(package, version)', () {
+    test('pnpm pins without --latest', () {
+      // pnpm refuses --latest together with an explicit spec
+      // (ERR_PNPM_LATEST_WITH_SPEC); without it the update moves the package
+      // into the named line in either direction.
+      final cmd = TypeScriptPackageManager.pnpm.pinCommand(
+        package: 'typescript',
+        version: '6',
+      );
+      expect(cmd.executable, 'pnpm');
+      expect(cmd.args, ['update', '--save-exact', 'typescript@6']);
+    });
+
+    test('yarn pins with --exact', () {
+      final cmd = TypeScriptPackageManager.yarn.pinCommand(
+        package: 'typescript',
+        version: '6',
+      );
+      expect(cmd.executable, 'yarn');
+      expect(cmd.args, ['upgrade', '--exact', 'typescript@6']);
+    });
+
+    test('npm pins with --save-exact', () {
+      final cmd = TypeScriptPackageManager.npm.pinCommand(
+        package: 'typescript',
+        version: '6',
+      );
+      expect(cmd.executable, 'npm');
+      expect(cmd.args, ['install', '--save-exact', 'typescript@6']);
+    });
+  });
+
+  group('pinnedNpmVersions', () {
+    test('holds typescript at 6', () {
+      // TypeScript 7 is a breaking rewrite the toolchain is not ready for.
+      expect(pinnedNpmVersions, {'typescript': '6'});
+    });
+  });
+
   group('TypeScriptPackageManager.lockFile', () {
     test('maps each package manager to its lock file', () {
       expect(TypeScriptPackageManager.pnpm.lockFile, 'pnpm-lock.yaml');

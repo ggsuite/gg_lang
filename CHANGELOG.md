@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.5.0 - 2026-08-09
+
+### Added
+
+- `PublishTarget`, `publishTargetsOf` and the `PublishTargetsX` extension — a
+package can now have a *set* of registries instead of one. Both manifests of a
+hybrid are read independently, so `publish_to: none` takes the Dart side out
+without touching the npm side and `private: true` does the reverse. This is
+what lets a hybrid publish to pub.dev **and** npm; `checkProjectType`, which
+resolves a hybrid to a single `ProjectType`, cannot express that.
+- `hybridVersions` / `hybridVersionsDiffer` — read both manifest versions of a
+hybrid, for reconciling them and for deciding whether pana can run.
+- `NpmRegistryResolver` and the pure `npmStatusUrlTemplate` — resolve the
+registry a package actually publishes to from the merged `.npmrc`
+(`publishConfig.registry` → `@scope:registry` → `registry`) and derive the
+human-facing status page from it. The npm registry and Azure Artifacts (cloud,
+organization-scoped, legacy `*.pkgs.visualstudio.com` and self-hosted) are
+mapped to their web pages; anything else falls back to the packument url.
+Before, the publish flow always printed an `npmjs.com` link, which is wrong for
+every scoped package on a private feed. Only the `registry` keys are ever read
+— never the `_authToken`/`_auth` credentials next to them.
+- `TypeScriptPackageManager.updateCommand({required bool latest})` — the argv to
+upgrade dependencies, so `gg do upgrade deps` can reach the node side.
+
+### Changed
+
+- Allow to publish hybrid packages
+
+## 0.4.1 - 2026-08-08
+
+### Added
+
+- `isHybridProject` — the predicate under its new name. `isBridgeProject`
+keeps working as an alias but now carries the widened meaning; "bridge"
+suggested a repo bridging two languages, while the rule is really about a
+repo carrying two manifests.
+
+### Changed
+
+- A hybrid repository — one carrying both a `pubspec.yaml` and a
+`package.json` — is recognized as such without a `tsconfig.json`, and
+`checkProjectType` resolves it to `ProjectType.typescript`. Before, the
+detection additionally required a `tsconfig.json`, so a Dart package that
+publishes its payload as an npm tarball fell through to
+`ProjectType.dart`: gg ran only the Dart pipeline on it, never the npm
+scripts, never wrote its `package.json` version, and never published it to
+npm.
+- Allow to publish pnpm packages without typescript.
+
 ## 0.4.0 - 2026-08-04
 
 ### Changed
