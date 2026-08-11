@@ -9,4 +9,4 @@
 // coverage:ignore-file
 
 /// The version of the `gg_lang` package.
-const String ggLangVersion = '0.5.0';
+const String ggLangVersion = '0.5.1';
