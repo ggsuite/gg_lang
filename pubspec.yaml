@@ -1,14 +1,14 @@
 name: gg_lang
 description: Shared language catalog and project-type detection for the gg toolchain.
-version: 0.5.0
+version: 0.5.1
 repository: https://github.com/ggsuite/gg_lang.git
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
 
 dependencies:
-  gg_console_colors: ^2.3.0
-  gg_process: ^1.1.6
+  gg_console_colors: ^2.3.1
+  gg_process: ^1.1.7
   http: ^1.6.0
   mocktail: ^1.0.5
   path: ^1.9.1
@@ -17,6 +17,6 @@ dependencies:
   yaml_edit: ^2.2.4
 
 dev_dependencies:
-  gg_capture_print: ^1.0.9
+  gg_capture_print: ^1.0.10
   lints: ^6.1.0
   test: ^1.31.2
