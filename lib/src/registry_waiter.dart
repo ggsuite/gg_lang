@@ -1,5 +1,5 @@
 // @license
-// Copyright (c) 2025 Göran Hegenberg. All Rights Reserved.
+// Copyright (c) ggsuite
 //
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
@@ -29,20 +29,18 @@ import 'package:pub_semver/pub_semver.dart';
 /// The wait never hangs: every poll is bounded by the registry's own request
 /// timeout, and the wait as a whole is bounded by [timeout].
 class RegistryWaiter {
-  /// Creates a waiter over [registry]. [registryName] is used in messages
+  /// Creates a waiter over [_registry]. [registryName] is used in messages
   /// (e.g. `npm`, `pub.dev`); [delay] and [now] are injectable for tests.
   RegistryWaiter({
-    required Registry registry,
+    required this._registry,
     this.registryName = 'the registry',
     this.statusUrl,
-    void Function(String message)? log,
+    this._log,
     Future<void> Function(Duration duration)? delay,
     DateTime Function()? now,
     this.pollInterval = const Duration(seconds: 5),
     this.timeout = const Duration(minutes: 2),
-  }) : _registry = registry,
-       _log = log,
-       _delay = delay ?? Future<void>.delayed,
+  }) : _delay = delay ?? Future<void>.delayed,
        _now = now ?? DateTime.now;
 
   final Registry _registry;

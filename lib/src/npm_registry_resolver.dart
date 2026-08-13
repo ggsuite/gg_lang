@@ -1,5 +1,5 @@
 // @license
-// Copyright (c) 2025 Göran Hegenberg. All Rights Reserved.
+// Copyright (c) ggsuite
 //
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
@@ -148,9 +148,7 @@ String _joinUrl(String origin, List<String> prefix, String feed) {
 /// must never touch them.
 class NpmRegistryResolver {
   /// Constructor.
-  NpmRegistryResolver({
-    GgProcessWrapper processWrapper = const GgProcessWrapper(),
-  }) : _processWrapper = processWrapper;
+  NpmRegistryResolver({this._processWrapper = const GgProcessWrapper()});
 
   /// Example instance for tests.
   factory NpmRegistryResolver.example() => NpmRegistryResolver();

@@ -1,5 +1,5 @@
 // @license
-// Copyright (c) 2025 Göran Hegenberg. All Rights Reserved.
+// Copyright (c) ggsuite
 //
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
@@ -304,9 +304,8 @@ void main() {
       // Callers use this to relax a check, so an unreadable manifest must not
       // trigger them.
       writePubspec(version: '1.0.0');
-      File(
-        '${tmp.path}/package.json',
-      ).writeAsStringSync('{"name": "@org/foo"}');
+      File('${tmp.path}/package.json')
+          .writeAsStringSync('{"name": "@org/foo"}');
       expect(await hybridVersionsDiffer(tmp, catalog: catalog), isFalse);
     });
   });

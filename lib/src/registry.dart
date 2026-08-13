@@ -1,5 +1,5 @@
 // @license
-// Copyright (c) 2025 Göran Hegenberg. All Rights Reserved.
+// Copyright (c) ggsuite
 //
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
@@ -52,11 +52,10 @@ abstract class Registry {
 class PubDevRegistry extends Registry {
   /// Constructor.
   PubDevRegistry({
-    required RegistrySpec spec,
-    http.Client? httpClient,
+    required this._spec,
+    this._httpClient,
     this.requestTimeout = const Duration(seconds: 30),
-  }) : _spec = spec,
-       _httpClient = httpClient;
+  });
 
   final RegistrySpec _spec;
   final http.Client? _httpClient;
@@ -157,18 +156,16 @@ class PubDevRegistry extends Registry {
 /// npm implementation (TypeScript) shelling out via the catalog command
 /// (`npm view <name> versions --json`).
 class NpmRegistry extends Registry {
-  /// Constructor. [workingDirectory] should be the package directory: npm
+  /// Constructor. [_workingDirectory] should be the package directory: npm
   /// resolves the project-level `.npmrc` from its working directory, so
   /// without it scoped registries (e.g. a private Azure Artifacts feed) are
   /// missed and their packages look unpublished.
   NpmRegistry({
-    required LanguageSpec spec,
-    GgProcessWrapper processWrapper = const GgProcessWrapper(),
-    String? workingDirectory,
+    required this._spec,
+    this._processWrapper = const GgProcessWrapper(),
+    this._workingDirectory,
     this.requestTimeout = const Duration(seconds: 60),
-  }) : _spec = spec,
-       _processWrapper = processWrapper,
-       _workingDirectory = workingDirectory;
+  });
 
   final LanguageSpec _spec;
   final GgProcessWrapper _processWrapper;
@@ -263,10 +260,9 @@ class NpmRegistry extends Registry {
 class RegistryFactory {
   /// Constructor.
   const RegistryFactory({
-    http.Client? httpClient,
-    GgProcessWrapper processWrapper = const GgProcessWrapper(),
-  }) : _httpClient = httpClient,
-       _processWrapper = processWrapper;
+    this._httpClient,
+    this._processWrapper = const GgProcessWrapper(),
+  });
 
   final http.Client? _httpClient;
   final GgProcessWrapper _processWrapper;

@@ -1,5 +1,5 @@
 // @license
-// Copyright (c) 2019 - 2024 Dr. Gabriel Gatzsche. All Rights Reserved.
+// Copyright (c) ggsuite
 //
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
@@ -24,9 +24,8 @@ void main() {
 
   group('detectProjectType', () {
     test('returns dart for a pubspec.yaml without flutter key', () {
-      File(
-        '${tmp.path}/pubspec.yaml',
-      ).writeAsStringSync('name: foo\nversion: 0.0.1\n');
+      File('${tmp.path}/pubspec.yaml')
+          .writeAsStringSync('name: foo\nversion: 0.0.1\n');
       expect(detectProjectType(tmp), ProjectType.dart);
     });
 

@@ -1,5 +1,5 @@
 // @license
-// Copyright (c) 2025 Göran Hegenberg. All Rights Reserved.
+// Copyright (c) ggsuite
 //
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
@@ -401,9 +401,8 @@ void main() {
 
   group('RegistryFactory', () {
     test('returns a PubDevRegistry for http registries', () {
-      final spec = LanguageCatalog.fromString(
-        _catalogJson,
-      ).spec(ProjectType.dart);
+      final spec = LanguageCatalog.fromString(_catalogJson)
+          .spec(ProjectType.dart);
       final registry = const RegistryFactory().forProjectType(
         ProjectType.dart,
         spec: spec,

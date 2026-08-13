@@ -1,5 +1,5 @@
 // @license
-// Copyright (c) 2025 Göran Hegenberg. All Rights Reserved.
+// Copyright (c) ggsuite
 //
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
@@ -94,6 +94,17 @@ void main() {
             'feed1/npm/registry/',
           ),
           'https://tfs.example.com:8080/DefaultCollection/proj/'
+          '_artifacts/feed/feed1',
+        );
+      });
+
+      test('keeps a self-hosted Azure DevOps Server without a port', () {
+        expect(
+          npmStatusUrlTemplate(
+            'https://tfs.example.com/DefaultCollection/proj/_packaging/'
+            'feed1/npm/registry/',
+          ),
+          'https://tfs.example.com/DefaultCollection/proj/'
           '_artifacts/feed/feed1',
         );
       });
