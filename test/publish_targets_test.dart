@@ -304,9 +304,8 @@ void main() {
       // Callers use this to relax a check, so an unreadable manifest must not
       // trigger them.
       writePubspec(version: '1.0.0');
-      File(
-        '${tmp.path}/package.json',
-      ).writeAsStringSync('{"name": "@org/foo"}');
+      File('${tmp.path}/package.json')
+          .writeAsStringSync('{"name": "@org/foo"}');
       expect(await hybridVersionsDiffer(tmp, catalog: catalog), isFalse);
     });
   });

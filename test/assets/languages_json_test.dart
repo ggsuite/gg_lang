@@ -14,9 +14,10 @@ void main() {
     test('stays in sync with lib/src/assets/languages.json', () {
       // The JSON file is the editable source of truth; the constant is what
       // `LanguageCatalog.load` uses at runtime (AOT-safe). Both must match.
-      final fromFile = File(
-        'lib/src/assets/languages.json',
-      ).readAsStringSync().replaceAll('\r\n', '\n').trim();
+      final fromFile = File('lib/src/assets/languages.json')
+          .readAsStringSync()
+          .replaceAll('\r\n', '\n')
+          .trim();
       final embedded = languagesJsonSource.replaceAll('\r\n', '\n').trim();
       expect(
         embedded,

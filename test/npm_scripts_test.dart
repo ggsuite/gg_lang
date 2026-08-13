@@ -58,32 +58,28 @@ void main() {
 
   group('hasNpmScript', () {
     test('is true when the script exists', () {
-      File(
-        '${tmp.path}/package.json',
-      ).writeAsStringSync('{"scripts":{"test":"vitest run"}}');
+      File('${tmp.path}/package.json')
+          .writeAsStringSync('{"scripts":{"test":"vitest run"}}');
       expect(hasNpmScript(tmp, 'test'), isTrue);
     });
 
     test('is false when the script is absent', () {
-      File(
-        '${tmp.path}/package.json',
-      ).writeAsStringSync('{"scripts":{"lint":"eslint"}}');
+      File('${tmp.path}/package.json')
+          .writeAsStringSync('{"scripts":{"lint":"eslint"}}');
       expect(hasNpmScript(tmp, 'test'), isFalse);
     });
   });
 
   group('isPrivateNpmPackage', () {
     test('is true when private is the JSON boolean true', () {
-      File(
-        '${tmp.path}/package.json',
-      ).writeAsStringSync('{"name":"foo","private":true}');
+      File('${tmp.path}/package.json')
+          .writeAsStringSync('{"name":"foo","private":true}');
       expect(isPrivateNpmPackage(tmp), isTrue);
     });
 
     test('is false when private is false', () {
-      File(
-        '${tmp.path}/package.json',
-      ).writeAsStringSync('{"name":"foo","private":false}');
+      File('${tmp.path}/package.json')
+          .writeAsStringSync('{"name":"foo","private":false}');
       expect(isPrivateNpmPackage(tmp), isFalse);
     });
 
@@ -93,9 +89,8 @@ void main() {
     });
 
     test('is false when private is a non-boolean (e.g. the string "true")', () {
-      File(
-        '${tmp.path}/package.json',
-      ).writeAsStringSync('{"name":"foo","private":"true"}');
+      File('${tmp.path}/package.json')
+          .writeAsStringSync('{"name":"foo","private":"true"}');
       expect(isPrivateNpmPackage(tmp), isFalse);
     });
 
@@ -144,9 +139,8 @@ void main() {
     });
 
     test('ignores a section that is not a map', () {
-      File(
-        '${tmp.path}/package.json',
-      ).writeAsStringSync('{"name": "x", "dependencies": "nope"}');
+      File('${tmp.path}/package.json')
+          .writeAsStringSync('{"name": "x", "dependencies": "nope"}');
       expect(readNpmDependencyNames(tmp), isEmpty);
     });
   });

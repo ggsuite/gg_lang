@@ -401,9 +401,8 @@ void main() {
 
   group('RegistryFactory', () {
     test('returns a PubDevRegistry for http registries', () {
-      final spec = LanguageCatalog.fromString(
-        _catalogJson,
-      ).spec(ProjectType.dart);
+      final spec = LanguageCatalog.fromString(_catalogJson)
+          .spec(ProjectType.dart);
       final registry = const RegistryFactory().forProjectType(
         ProjectType.dart,
         spec: spec,

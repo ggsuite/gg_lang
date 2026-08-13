@@ -98,6 +98,17 @@ void main() {
         );
       });
 
+      test('keeps a self-hosted Azure DevOps Server without a port', () {
+        expect(
+          npmStatusUrlTemplate(
+            'https://tfs.example.com/DefaultCollection/proj/_packaging/'
+            'feed1/npm/registry/',
+          ),
+          'https://tfs.example.com/DefaultCollection/proj/'
+          '_artifacts/feed/feed1',
+        );
+      });
+
       test('falls back when _packaging is the last segment', () {
         expect(
           npmStatusUrlTemplate('https://pkgs.dev.azure.com/org/_packaging'),

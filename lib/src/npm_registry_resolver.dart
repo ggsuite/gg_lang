@@ -148,9 +148,7 @@ String _joinUrl(String origin, List<String> prefix, String feed) {
 /// must never touch them.
 class NpmRegistryResolver {
   /// Constructor.
-  NpmRegistryResolver({
-    GgProcessWrapper processWrapper = const GgProcessWrapper(),
-  }) : _processWrapper = processWrapper;
+  NpmRegistryResolver({this._processWrapper = const GgProcessWrapper()});
 
   /// Example instance for tests.
   factory NpmRegistryResolver.example() => NpmRegistryResolver();

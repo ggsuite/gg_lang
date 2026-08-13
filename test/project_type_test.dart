@@ -24,9 +24,8 @@ void main() {
 
   group('detectProjectType', () {
     test('returns dart for a pubspec.yaml without flutter key', () {
-      File(
-        '${tmp.path}/pubspec.yaml',
-      ).writeAsStringSync('name: foo\nversion: 0.0.1\n');
+      File('${tmp.path}/pubspec.yaml')
+          .writeAsStringSync('name: foo\nversion: 0.0.1\n');
       expect(detectProjectType(tmp), ProjectType.dart);
     });
 

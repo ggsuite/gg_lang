@@ -19,9 +19,8 @@ void main() {
   });
 
   void mockLatest(Version? version) {
-    when(
-      () => registry.latestVersion(packageName: any(named: 'packageName')),
-    ).thenAnswer((_) async => version);
+    when(() => registry.latestVersion(packageName: any(named: 'packageName')))
+        .thenAnswer((_) async => version);
   }
 
   group('RegistryWaiter', () {
