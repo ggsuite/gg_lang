@@ -56,7 +56,8 @@ extension ProjectTypeX on ProjectType {
 /// [checkProjectType].
 ///
 /// Detection rules, in order:
-/// 1. `pubspec.yaml` with a top-level `flutter:` key → [ProjectType.flutter]
+/// 1. `pubspec.yaml` with a top-level `flutter:` key, or one depending on the
+///    Flutter SDK → [ProjectType.flutter]
 /// 2. `pubspec.yaml` → [ProjectType.dart]
 /// 3. `package.json` + `tsconfig.json` → [ProjectType.typescript]
 /// 4. otherwise → [ProjectType.none]
@@ -68,7 +69,7 @@ ProjectType detectProjectType(Directory directory) {
   final pubspec = File('${directory.path}/pubspec.yaml');
   if (pubspec.existsSync()) {
     final content = pubspec.readAsStringSync();
-    if (_hasTopLevelFlutterKey(content)) {
+    if (_hasTopLevelFlutterKey(content) || _dependsOnFlutterSdk(content)) {
       return ProjectType.flutter;
     }
     return ProjectType.dart;
@@ -144,5 +145,45 @@ bool _hasTopLevelFlutterKey(String pubspecContent) {
       return true;
     }
   }
+  return false;
+}
+
+// .............................................................................
+/// Whether [pubspecContent] declares a dependency on the Flutter SDK, i.e.
+/// carries a `flutter:` entry followed by `sdk: flutter`.
+///
+/// A top-level `flutter:` section is not enough to recognize a Flutter
+/// package: it holds assets, fonts and `uses-material-design`, none of which
+/// a plain widget library needs. Such a package — `supply_chain_flutter` is
+/// one — has `flutter:` only under `environment:` and `dependencies:`, and was
+/// therefore classified as plain Dart. The SDK dependency is what actually
+/// makes a package Flutter, and it is the signal `gg_is_flutter` reads too.
+bool _dependsOnFlutterSdk(String pubspecContent) {
+  var sawFlutterKey = false;
+
+  for (final rawLine in pubspecContent.split('\n')) {
+    final line = rawLine.replaceAll('\r', '');
+    if (line.trim().startsWith('#')) continue;
+
+    // »  flutter:« — the dependency entry, indented under dependencies: or
+    // dev_dependencies:. The top-level form is handled by the caller.
+    if (line.startsWith(' ') && line.trim() == 'flutter:') {
+      sawFlutterKey = true;
+      continue;
+    }
+
+    if (sawFlutterKey) {
+      if (line.trim() == 'sdk: flutter') {
+        return true;
+      }
+      // Only the line directly below the key describes it; »environment:«
+      // uses »flutter: ">=3.47.0"«, which never reaches this branch because
+      // it does not match the bare-key test above.
+      if (line.trim().isNotEmpty) {
+        sawFlutterKey = false;
+      }
+    }
+  }
+
   return false;
 }

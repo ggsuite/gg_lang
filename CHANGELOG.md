@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1 - 2026-08-15
+
+### Changed
+
+- Detect Flutter packages by their SDK dependency
+
 ## 0.6.0 - 2026-08-13
 
 ### Changed

@@ -39,15 +39,61 @@ void main() {
       expect(detectProjectType(tmp), ProjectType.flutter);
     });
 
-    test('ignores indented "flutter:" keys (not top-level)', () {
+    test('returns flutter for a package depending on the flutter sdk', () {
       File('${tmp.path}/pubspec.yaml').writeAsStringSync(
         'name: foo\n'
         'dependencies:\n'
         '  flutter:\n'
         '    sdk: flutter\n',
       );
-      // Indented `flutter:` under `dependencies:` is common in plain Dart
-      // packages that talk to Flutter types but are not Flutter apps.
+      // A package pulling in the Flutter SDK can only be resolved and tested
+      // by Flutter, so it is a Flutter package — whether or not it also
+      // carries the top-level `flutter:` section for assets and fonts.
+      // This case previously answered `dart`, which handed the version file
+      // generator the Dart spec and produced a mirror test importing
+      // package:test into a package that cannot resolve it.
+      expect(detectProjectType(tmp), ProjectType.flutter);
+    });
+
+    test('returns flutter for a widget library without assets section', () {
+      // The shape of supply_chain_flutter: `flutter:` appears only under
+      // `environment:` (as a version constraint) and under `dependencies:`.
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync(
+        'name: foo\n'
+        'version: 1.1.0\n'
+        'environment:\n'
+        '  sdk: ">=3.13.0 <4.0.0"\n'
+        '  flutter: ">=3.47.0"\n'
+        'dependencies:\n'
+        '  flutter:\n'
+        '    sdk: flutter\n'
+        'dev_dependencies:\n'
+        '  flutter_test:\n'
+        '    sdk: flutter\n',
+      );
+      expect(detectProjectType(tmp), ProjectType.flutter);
+    });
+
+    test('does not treat a flutter version constraint as a dependency', () {
+      // `environment:` constrains the Flutter SDK version with an inline
+      // value. That is not a dependency on it, and a package may declare it
+      // without being a Flutter package.
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync(
+        'name: foo\n'
+        'environment:\n'
+        '  sdk: ">=3.13.0 <4.0.0"\n'
+        '  flutter: ">=3.47.0"\n',
+      );
+      expect(detectProjectType(tmp), ProjectType.dart);
+    });
+
+    test('does not treat an unrelated key below "flutter:" as the sdk', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync(
+        'name: foo\n'
+        'dependency_overrides:\n'
+        '  flutter:\n'
+        '    path: ../flutter_stub\n',
+      );
       expect(detectProjectType(tmp), ProjectType.dart);
     });
 
