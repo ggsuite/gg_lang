@@ -4,6 +4,7 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
+import 'dart:convert';
 import 'dart:io';
 
 // #############################################################################
@@ -27,7 +28,8 @@ enum ProjectType {
   /// (analyze / format / build / tests) are skipped and the version lives
   /// exclusively in git tags. Note that a `package.json` without a
   /// `tsconfig.json` also resolves to this type — unless a `pubspec.yaml`
-  /// sits next to it, which makes the directory a hybrid.
+  /// sits next to it, which makes the directory a hybrid. A `package.json`
+  /// that is no npm manifest (see [hasNpmManifest]) counts as absent.
   none,
 }
 
@@ -59,7 +61,8 @@ extension ProjectTypeX on ProjectType {
 /// 1. `pubspec.yaml` with a top-level `flutter:` key, or one depending on the
 ///    Flutter SDK → [ProjectType.flutter]
 /// 2. `pubspec.yaml` → [ProjectType.dart]
-/// 3. `package.json` + `tsconfig.json` → [ProjectType.typescript]
+/// 3. `package.json` (an npm manifest, see [hasNpmManifest]) +
+///    `tsconfig.json` → [ProjectType.typescript]
 /// 4. otherwise → [ProjectType.none]
 ///
 /// Note that rule 2 also catches hybrids: a repo with both manifests reports
@@ -75,13 +78,48 @@ ProjectType detectProjectType(Directory directory) {
     return ProjectType.dart;
   }
 
-  final packageJson = File('${directory.path}/package.json');
   final tsconfig = File('${directory.path}/tsconfig.json');
-  if (packageJson.existsSync() && tsconfig.existsSync()) {
+  if (hasNpmManifest(directory) && tsconfig.existsSync()) {
     return ProjectType.typescript;
   }
 
   return ProjectType.none;
+}
+
+// #############################################################################
+
+/// Whether [directory] carries a `package.json` that is an **npm manifest**:
+/// a JSON object with a non-empty string `name`.
+///
+/// npm itself refuses to install, run or publish a package without a `name`,
+/// so a `package.json` without one describes no npm package. Such files do
+/// turn up in Dart repositories — a leftover `{}` from a tool, a scripts-only
+/// stub, a half-written file — and used to make [isHybridProject] answer
+/// true, which sent the whole check pipeline down the TypeScript path:
+/// `gg can commit` then skipped `dart analyze` and `dart test` and ran
+/// `vitest` instead, which failed. A file that is not a manifest is treated
+/// exactly like no file at all — here, in [detectProjectType], in
+/// [isHybridProject] and in [checkProjectType].
+///
+/// Unparsable JSON is a non-manifest as well: a project that does not even
+/// parse cannot be an npm package, and every caller that reads
+/// `package.json` afterwards tolerates that state already
+/// (`readNpmScripts`, `isPrivateNpmPackage`, …).
+bool hasNpmManifest(Directory directory) {
+  final file = File('${directory.path}/package.json');
+  if (!file.existsSync()) {
+    return false;
+  }
+  try {
+    final decoded = jsonDecode(file.readAsStringSync());
+    if (decoded is! Map<String, dynamic>) {
+      return false;
+    }
+    final name = decoded['name'];
+    return name is String && name.trim().isNotEmpty;
+  } on FormatException {
+    return false;
+  }
 }
 
 // #############################################################################
@@ -97,14 +135,19 @@ ProjectType detectProjectType(Directory directory) {
 /// to keep in lock-step — which is what every caller of this predicate
 /// actually cares about.
 ///
+/// The `package.json` has to be an npm manifest, though — see
+/// [hasNpmManifest]. A Dart package next to a `package.json` without a
+/// `name` is a plain Dart package; there is no second registry and no second
+/// version to keep in step, and checking it as TypeScript would only skip
+/// the Dart checks.
+///
 /// [detectProjectType] resolves such a directory to [ProjectType.dart],
 /// because pubspec.yaml takes precedence. The gg check pipeline
 /// (analyze/format/tests) treats hybrids as TypeScript instead, so it needs
 /// to recognize them explicitly — see [checkProjectType].
 bool isHybridProject(Directory directory) {
   final pubspec = File('${directory.path}/pubspec.yaml');
-  final packageJson = File('${directory.path}/package.json');
-  return pubspec.existsSync() && packageJson.existsSync();
+  return pubspec.existsSync() && hasNpmManifest(directory);
 }
 
 /// Former name of [isHybridProject], kept so callers keep compiling.
