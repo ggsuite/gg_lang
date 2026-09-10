@@ -109,18 +109,18 @@ packages:
     dependency: transitive
     description:
       name: dna_gg
-      sha256: "6570c97f79e84c4ef5aae92954ad21c0e65edfe710802684df83cefc6f6860ed"
+      sha256: "701f0c49cfaf7044148e031fcb03efa37b00d4f7c310d61c9cff10bf520ba98b"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.2"
+    version: "0.2.0"
   dna_ggsuite:
     dependency: "direct dev"
     description:
       name: dna_ggsuite
-      sha256: "009fc6deeb2665cfb33590948bcc27c841c0dfddadd09eea5023d88b966a72bc"
+      sha256: b7ab08e443021fd9841ced507d7691b3244841bc223308df39c9bdf825480b38
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.0"
+    version: "0.2.1"
   dna_guides:
     dependency: transitive
     description:
@@ -157,10 +157,10 @@ packages:
     dependency: transitive
     description:
       name: dna_scripts
-      sha256: e14ff865c5640323e99fc122961e14b81338f205c65721d3b4d7bdf8763d6b16
+      sha256: "0f07dfd87ca0cd86b2af6339c2882595fcfe321cf5a1c7c4589ea3370baecebc"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.0"
+    version: "0.2.1"
   dna_translate:
     dependency: transitive
     description:
@@ -261,10 +261,10 @@ packages:
     dependency: "direct dev"
     description:
       name: helix
-      sha256: d8738d0a8812f8df7a2c984f7aaf6f01b883bf6672b54c5f9a940232d61e87a7
+      sha256: "21f84973cf4c18ca001aea45cb33fe8aa1d0e17270aedf300cedd6cc9ec92078"
       url: "https://pub.dev"
     source: hosted
-    version: "1.3.1"
+    version: "1.7.1"
   http:
     dependency: "direct main"
     description:
