@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0 - 2026-09-11
+
+### Fixed
+
+- A `package.json` without a valid `name` no longer turns a Dart project into a TypeScript or hybrid project; `hasNpmManifest` tells a real npm manifest from a stray file
+
 ## 0.7.0 - 2026-09-03
 
 ### Changed

@@ -142,6 +142,63 @@ void main() {
       File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
       expect(detectProjectType(tmp), ProjectType.dart);
     });
+
+    test('returns none for a package.json without name + tsconfig.json', () {
+      // A `package.json` that is no npm manifest counts as absent.
+      File('${tmp.path}/package.json').writeAsStringSync('{}');
+      File('${tmp.path}/tsconfig.json').writeAsStringSync('{}');
+      expect(detectProjectType(tmp), ProjectType.none);
+    });
+  });
+
+  group('hasNpmManifest', () {
+    test('is true for a package.json with a non-empty name', () {
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
+      expect(hasNpmManifest(tmp), isTrue);
+    });
+
+    test('is true for a scoped name', () {
+      File('${tmp.path}/package.json')
+          .writeAsStringSync('{"name":"@scope/foo","version":"1.0.0"}');
+      expect(hasNpmManifest(tmp), isTrue);
+    });
+
+    test('is false without a package.json', () {
+      expect(hasNpmManifest(tmp), isFalse);
+    });
+
+    test('is false for an empty object', () {
+      File('${tmp.path}/package.json').writeAsStringSync('{}');
+      expect(hasNpmManifest(tmp), isFalse);
+    });
+
+    test('is false for a scripts-only stub', () {
+      File('${tmp.path}/package.json')
+          .writeAsStringSync('{"scripts":{"test":"vitest run"}}');
+      expect(hasNpmManifest(tmp), isFalse);
+    });
+
+    test('is false for an empty or blank name', () {
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":""}');
+      expect(hasNpmManifest(tmp), isFalse);
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":"  "}');
+      expect(hasNpmManifest(tmp), isFalse);
+    });
+
+    test('is false when name is not a string', () {
+      File('${tmp.path}/package.json').writeAsStringSync('{"name":42}');
+      expect(hasNpmManifest(tmp), isFalse);
+    });
+
+    test('is false when the file is not a JSON object', () {
+      File('${tmp.path}/package.json').writeAsStringSync('["foo"]');
+      expect(hasNpmManifest(tmp), isFalse);
+    });
+
+    test('is false for unparsable JSON', () {
+      File('${tmp.path}/package.json').writeAsStringSync('{"name": ');
+      expect(hasNpmManifest(tmp), isFalse);
+    });
   });
 
   group('isHybridProject', () {
@@ -184,6 +241,22 @@ void main() {
     test('is false for an empty directory', () {
       expect(isHybridProject(tmp), isFalse);
     });
+
+    test('is false for a Dart package next to a package.json without name', () {
+      // The leftover `{}` some tools drop into a Dart repository is no npm
+      // manifest: there is no second package to keep in step. Treating the
+      // repo as a hybrid sent `gg can commit` down the TypeScript path.
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      File('${tmp.path}/package.json').writeAsStringSync('{}');
+      expect(isHybridProject(tmp), isFalse);
+      expect(isBridgeProject(tmp), isFalse);
+    });
+
+    test('is false for a Dart package next to an unparsable package.json', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      File('${tmp.path}/package.json').writeAsStringSync('not json');
+      expect(isHybridProject(tmp), isFalse);
+    });
   });
 
   group('isBridgeProject', () {
@@ -223,6 +296,12 @@ void main() {
       File('${tmp.path}/package.json').writeAsStringSync('{"name":"foo"}');
       expect(detectProjectType(tmp), ProjectType.flutter);
       expect(checkProjectType(tmp), ProjectType.typescript);
+    });
+
+    test('checks a Dart package next to a nameless package.json as dart', () {
+      File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: foo\n');
+      File('${tmp.path}/package.json').writeAsStringSync('{"scripts":{}}');
+      expect(checkProjectType(tmp), ProjectType.dart);
     });
 
     test('delegates to detectProjectType for a pure Dart package', () {
