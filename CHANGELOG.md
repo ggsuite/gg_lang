@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Upgrade dependencies
+
 ## 0.8.1 - 2026-09-22
 
 ### Changed
