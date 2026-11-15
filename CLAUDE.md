@@ -25,7 +25,4 @@ next to them. `NpmLoggedIn`, `WaitUntilPublished` and `NpmRegistryChecker` all
 share it.
 
 <!-- helix:claude_md:start -->
-
-@.claude/CLAUDE_dna_gg.md
-
 <!-- helix:claude_md:end -->
