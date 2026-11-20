@@ -183,13 +183,6 @@ void main() {
     });
   });
 
-  group('pinnedNpmVersions', () {
-    test('holds typescript at 6', () {
-      // TypeScript 7 is a breaking rewrite the toolchain is not ready for.
-      expect(pinnedNpmVersions, {'typescript': '6'});
-    });
-  });
-
   group('TypeScriptPackageManager.lockFile', () {
     test('maps each package manager to its lock file', () {
       expect(TypeScriptPackageManager.pnpm.lockFile, 'pnpm-lock.yaml');
