@@ -120,7 +120,7 @@ enum TypeScriptPackageManager {
   /// `--save-exact` only decides how the *manifest* is rewritten when the
   /// declared spec carries no range operator; pnpm keeps an existing `^`/`~`
   /// and just retargets it (`^7.0.2` → `^6.0.3`). Either way the package stays
-  /// inside the pinned major, and the pin re-runs on every upgrade.
+  /// inside the named major.
   ({String executable, List<String> args}) pinCommand({
     required String package,
     required String version,
@@ -158,16 +158,12 @@ enum TypeScriptPackageManager {
 
 // #############################################################################
 
-/// npm packages gg holds at a fixed version instead of letting an upgrade
-/// carry them along.
-///
-/// `pnpm update --latest` crosses every major boundary. TypeScript 7 is a
-/// breaking rewrite the toolchain around it is not ready for, so the node
-/// upgrade runs the generic update first and then pins these packages — which
-/// also brings a repository that already drifted past the pin back down.
-///
-/// Only packages a repository actually **declares** are pinned. Installing one
-/// it never declared would add it as a new dependency.
+/// npm packages gg once held at a fixed version during an upgrade. gg no
+/// longer reads this.
+@Deprecated(
+  'gg no longer holds npm packages at a fixed version; '
+  'removed with the next breaking release.',
+)
 const Map<String, String> pinnedNpmVersions = <String, String>{
   'typescript': '6',
 };

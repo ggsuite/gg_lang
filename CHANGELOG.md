@@ -1,11 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.8.5 - 2026-11-23
 
 ### Changed
 
 - Upgrade the DNA
 - Upgrade the SDK, the dependencies and the DNA
+
+### Deprecated
+
+- Deprecate pinnedNpmVersions
 
 ## 0.8.4 - 2026-11-06
 
